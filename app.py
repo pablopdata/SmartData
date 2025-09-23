@@ -40,7 +40,7 @@ def index():
 <body>
 <!-- Barra de navegación -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-<a class="navbar-brand" href="#">Flask + Matplotlib</a>
+<a class="navbar-brand" href="#">Flask + Matplotlib para inteligentes smartdateros</a>
 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 <span class="navbar-toggler-icon"></span>
 </button>
@@ -59,7 +59,7 @@ def index():
 </div>
 </nav>
 <div class="container">
-<h1>Gráfico generado con Matplotlib</h1>
+<h1>Gráfica de MatPlotlib</h1>
 <!-- Imagen del gráfico -->
 <div class="text-center">
 <img src="{{ url_for('plot_png') }}" alt="Gráfico" class="img-fluid" style="max-width: 80%;">
