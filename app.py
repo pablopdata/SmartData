@@ -3,9 +3,7 @@ from supabase import create_client
 import matplotlib.pyplot as plt
 import io
 import os
-from dotenv import load_dotenv
-# Cargar variables de entorno
-load_dotenv()
+
 app = Flask(__name__)
 # Configuración de Supabase
 SUPABASE_URL = os.getenv("https://bxgpbkimoqyzfnehgnhh.supabase.co")
