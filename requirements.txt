@@ -1,4 +1,4 @@
 Flask
 matplotlib
 gunicorn
-supabase
+psycopg2-binary
