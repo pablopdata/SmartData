@@ -25,7 +25,7 @@ def index():
        table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
    else:
        table_rows = "".join(
-           f"<tr><td>{row['id']}</td><td>{row['peticion']}</td><td>{row['horas']}</td></tr>"
+           f"<tr><td>{row['id']}</td><td>{row['codigo']}</td><td>{row['horas_totales']}</td></tr>"
            for row in data
        )
    return render_template_string("""
@@ -75,7 +75,7 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 @app.route("/plot.png")
 def plot_png():
    data = get_data()
-   horas_imputadas = sum(d.get('horas', 0) for d in data) if data else 0
+   horas_imputadas = sum(d.get('horas_totales', 0) for d in data) if data else 0
    horas_totales = 16
    restantes = max(horas_totales - horas_imputadas, 0)
    labels = ['Horas Imputadas', 'Horas Restantes']
