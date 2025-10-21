@@ -12,7 +12,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_data():
    """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
    try:
-       response = supabase.table("imputaciones").select("id, codigo, horas_totales").execute()
+       response = supabase.table("imputaciones").select("*").execute()
+       print("📊 Datos obtenidos de Supabase:", response.data)
        return response.data
    except Exception as e:
        print("❌ Error obteniendo datos de Supabase:", e)
@@ -37,21 +38,10 @@ body {
    font-family: 'Arial', sans-serif;
    background-color: #f4f4f9;
 }
-.container {
-   margin-top: 50px;
-}
-h1 {
-   color: #333;
-   text-align: center;
-   margin-bottom: 40px;
-}
-.table-container {
-   max-height: 400px;
-   overflow-y: auto;
-}
-.img-fluid {
-   max-height: 400px;
-}
+.container { margin-top: 50px; }
+h1 { color: #333; text-align: center; margin-bottom: 40px; }
+.table-container { max-height: 400px; overflow-y: auto; }
+.img-fluid { max-height: 400px; }
 </style>
 </head>
 <body>
@@ -61,16 +51,11 @@ h1 {
 <div class="container">
 <h1>Resumen de Imputaciones</h1>
 <div class="row">
-<!-- Tabla a la izquierda -->
 <div class="col-md-6">
 <div class="table-container">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
-<tr>
-<th>id</th>
-<th>codigo</th>
-<th>horas_totales</th>
-</tr>
+<tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
 </thead>
 <tbody>
 {{ table_rows|safe }}
@@ -78,7 +63,6 @@ h1 {
 </table>
 </div>
 </div>
-<!-- Gráfico a la derecha -->
 <div class="col-md-6 text-center">
 <img src="{{ url_for('plot_png') }}" alt="Gráfico de Tarta" class="img-fluid">
 <p class="mt-3">Horas Imputadas vs Horas Totales</p>
@@ -91,7 +75,7 @@ h1 {
 @app.route("/plot.png")
 def plot_png():
    data = get_data()
-   horas_imputadas = sum(d['horas'] for d in data) if data else 0
+   horas_imputadas = sum(d.get('horas', 0) for d in data) if data else 0
    horas_totales = 16
    restantes = max(horas_totales - horas_imputadas, 0)
    labels = ['Horas Imputadas', 'Horas Restantes']
