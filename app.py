@@ -12,7 +12,7 @@ def get_data():
    try:
        conn = psycopg2.connect(DB_URL, sslmode="require", cursor_factory=RealDictCursor)
        cur = conn.cursor()
-       cur.execute("SELECT id, peticion, horas FROM imputaciones ORDER BY id;")
+       cur.execute("SELECT * FROM imputaciones ORDER BY id;")
        data = cur.fetchall()
        cur.close()
        conn.close()
@@ -69,9 +69,9 @@ h1 {
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>ID</th>
-<th>Petición</th>
-<th>Horas</th>
+<th>id</th>
+<th>codigo</th>
+<th>horas_totales</th>
 </tr>
 </thead>
 <tbody>
