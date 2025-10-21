@@ -2,23 +2,20 @@ from flask import Flask, render_template_string, Response
 import matplotlib.pyplot as plt
 import io
 import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from supabase import create_client, Client
 app = Flask(__name__)
-# ⚙️ Carga la URL de conexión desde una variable de entorno
-DB_URL = os.getenv("SUPABASE_DB_URL")
+# 🔗 Configuración desde variables de entorno
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# Inicializa el cliente de Supabase
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_data():
-   """Obtiene los datos desde la tabla 'imputaciones' de Supabase"""
+   """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
    try:
-       conn = psycopg2.connect(DB_URL, sslmode="require", cursor_factory=RealDictCursor)
-       cur = conn.cursor()
-       cur.execute("SELECT * FROM imputaciones ORDER BY id;")
-       data = cur.fetchall()
-       cur.close()
-       conn.close()
-       return data
+       response = supabase.table("imputaciones").select("id, peticion, horas").execute()
+       return response.data
    except Exception as e:
-       print("❌ Error conectando a la base de datos:", e)
+       print("❌ Error obteniendo datos de Supabase:", e)
        return []
 @app.route("/")
 def index():
@@ -27,7 +24,8 @@ def index():
        table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
    else:
        table_rows = "".join(
-           f"<tr><td>{row['id']}</td><td>{row['peticion']}</td><td>{row['horas']}</td></tr>" for row in data
+           f"<tr><td>{row['id']}</td><td>{row['peticion']}</td><td>{row['horas']}</td></tr>"
+           for row in data
        )
    return render_template_string("""
 <html>
@@ -69,9 +67,9 @@ h1 {
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>id</th>
-<th>codigo</th>
-<th>horas_totales</th>
+<th>ID</th>
+<th>Petición</th>
+<th>Horas</th>
 </tr>
 </thead>
 <tbody>
@@ -109,5 +107,4 @@ def plot_png():
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
 if __name__ == "__main__":
-   # Flask usará el puerto proporcionado por Render automáticamente
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
