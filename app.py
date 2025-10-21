@@ -5,14 +5,14 @@ import os
 from supabase import create_client, Client
 app = Flask(__name__)
 # 🔗 Configuración desde variables de entorno
-SUPABASE_URL = os.getenv("https://bxgpbkimoqyzfnehgnhh.supabase.co")
-SUPABASE_KEY = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4Z3Bia2ltb3F5emZuZWhnbmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMzc1NjMsImV4cCI6MjA3NjYxMzU2M30.dTaMH4d0hNUd3OP740stlhb5lvmG8ufgSWqNFHwtFTs")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa el cliente de Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_data():
    """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
    try:
-       response = supabase.table("imputaciones").select("id, peticion, horas").execute()
+       response = supabase.table("imputaciones").select("id, codigo, horas_totales").execute()
        return response.data
    except Exception as e:
        print("❌ Error obteniendo datos de Supabase:", e)
@@ -67,9 +67,9 @@ h1 {
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>ID</th>
-<th>Petición</th>
-<th>Horas</th>
+<th>id</th>
+<th>codigo</th>
+<th>horas_totales</th>
 </tr>
 </thead>
 <tbody>
