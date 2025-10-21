@@ -9,6 +9,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa el cliente de Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 def get_data():
    """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
    try:
@@ -18,6 +19,7 @@ def get_data():
    except Exception as e:
        print("❌ Error obteniendo datos de Supabase:", e)
        return []
+
 @app.route("/")
 def index():
    data = get_data()
@@ -42,6 +44,20 @@ body {
 h1 { color: #333; text-align: center; margin-bottom: 40px; }
 .table-container { max-height: 400px; overflow-y: auto; }
 .img-fluid { max-height: 400px; }
+.refresh-btn {
+   display: block;
+   margin: 20px auto;
+   background-color: #007bff;
+   border: none;
+   color: white;
+   padding: 10px 25px;
+   border-radius: 5px;
+   font-size: 16px;
+   cursor: pointer;
+}
+.refresh-btn:hover {
+   background-color: #0056b3;
+}
 </style>
 </head>
 <body>
@@ -50,28 +66,49 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 </nav>
 <div class="container">
 <h1>Resumen de Imputaciones</h1>
+<!-- 🔄 Botón de refresco -->
+<button class="refresh-btn" onclick="refreshData()">🔄 Refrescar Datos</button>
 <div class="row">
+<!-- Tabla a la izquierda -->
 <div class="col-md-6">
 <div class="table-container">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
 </thead>
-<tbody>
+<tbody id="data-table">
 {{ table_rows|safe }}
 </tbody>
 </table>
 </div>
 </div>
+<!-- Gráfico a la derecha -->
 <div class="col-md-6 text-center">
-<img src="{{ url_for('plot_png') }}" alt="Gráfico de Tarta" class="img-fluid">
+<img id="chart" src="{{ url_for('plot_png') }}" alt="Gráfico de Tarta" class="img-fluid">
 <p class="mt-3">Horas Imputadas vs Horas Totales</p>
 </div>
 </div>
 </div>
+<script>
+function refreshData() {
+   // Recarga solo la tabla
+   fetch(window.location.href)
+     .then(response => response.text())
+     .then(html => {
+         const parser = new DOMParser();
+         const doc = parser.parseFromString(html, "text/html");
+         document.getElementById("data-table").innerHTML =
+             doc.getElementById("data-table").innerHTML;
+     });
+   // Recarga el gráfico (cambia la URL para evitar caché)
+   const chart = document.getElementById("chart");
+   chart.src = "/plot.png?" + new Date().getTime();
+}
+</script>
 </body>
 </html>
    """, table_rows=table_rows)
+
 @app.route("/plot.png")
 def plot_png():
    data = get_data()
@@ -90,5 +127,6 @@ def plot_png():
    plt.close(fig)
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
+
 if __name__ == "__main__":
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
