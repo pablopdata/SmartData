@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, Response
+from flask import Flask, render_template_string, Response, request, redirect, url_for
 import matplotlib.pyplot as plt
 import io
 import os
@@ -9,7 +9,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa el cliente de Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 def get_data():
    """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
    try:
@@ -19,9 +18,22 @@ def get_data():
    except Exception as e:
        print("❌ Error obteniendo datos de Supabase:", e)
        return []
-
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
+   # Si se envía el formulario, insertar nuevo registro
+   if request.method == "POST":
+       codigo = request.form.get("codigo")
+       horas_totales = request.form.get("horas_totales")
+       if codigo and horas_totales:
+           try:
+               supabase.table("imputaciones").insert({
+                   "codigo": codigo,
+                   "horas_totales": int(horas_totales)
+               }).execute()
+               print(f"✅ Insertado: {codigo}, {horas_totales}")
+           except Exception as e:
+               print("❌ Error insertando registro:", e)
+       return redirect(url_for("index"))
    data = get_data()
    if not data:
        table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
@@ -36,17 +48,14 @@ def index():
 <title>Imputaciones Smart Data</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <style>
-body {
-   font-family: 'Arial', sans-serif;
-   background-color: #f4f4f9;
-}
+body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; }
 .container { margin-top: 50px; }
 h1 { color: #333; text-align: center; margin-bottom: 40px; }
 .table-container { max-height: 400px; overflow-y: auto; }
 .img-fluid { max-height: 400px; }
-.refresh-btn {
+.refresh-btn, .add-btn {
    display: block;
-   margin: 20px auto;
+   margin: 10px auto;
    background-color: #007bff;
    border: none;
    color: white;
@@ -55,9 +64,7 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
    font-size: 16px;
    cursor: pointer;
 }
-.refresh-btn:hover {
-   background-color: #0056b3;
-}
+.refresh-btn:hover, .add-btn:hover { background-color: #0056b3; }
 </style>
 </head>
 <body>
@@ -68,8 +75,13 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 <h1>Resumen de Imputaciones</h1>
 <!-- 🔄 Botón de refresco -->
 <button class="refresh-btn" onclick="refreshData()">🔄 Refrescar Datos</button>
+<!-- ➕ Formulario para añadir registro -->
+<form method="POST" class="text-center mb-3">
+<input type="text" name="codigo" placeholder="Código" required style="margin-right:10px;padding:5px;">
+<input type="number" name="horas_totales" placeholder="Horas Totales" required style="margin-right:10px;padding:5px;">
+<button type="submit" class="add-btn">➕ Añadir Registro</button>
+</form>
 <div class="row">
-<!-- Tabla a la izquierda -->
 <div class="col-md-6">
 <div class="table-container">
 <table class="table table-striped table-bordered">
@@ -82,7 +94,6 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 </table>
 </div>
 </div>
-<!-- Gráfico a la derecha -->
 <div class="col-md-6 text-center">
 <img id="chart" src="{{ url_for('plot_png') }}" alt="Gráfico de Tarta" class="img-fluid">
 <p class="mt-3">Horas Imputadas vs Horas Totales</p>
@@ -107,8 +118,7 @@ function refreshData() {
 </script>
 </body>
 </html>
-   """, table_rows=table_rows)
-
+""", table_rows=table_rows)
 @app.route("/plot.png")
 def plot_png():
    data = get_data()
@@ -127,6 +137,5 @@ def plot_png():
    plt.close(fig)
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
-
 if __name__ == "__main__":
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
