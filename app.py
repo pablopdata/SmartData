@@ -9,15 +9,18 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa el cliente de Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-def get_data():
-   """Obtiene los datos desde la tabla 'imputaciones' usando la API REST de Supabase"""
+
+# 🔹 Función para obtener datos de una tabla
+def get_data(tabla):
+   """Obtiene los datos desde una tabla de Supabase"""
    try:
-       response = supabase.table("imputaciones").select("*").execute()
-       print("📊 Datos obtenidos de Supabase:", response.data)
+       response = supabase.table(tabla).select("*").execute()
+       print(f"📊 Datos obtenidos de {tabla}:", response.data)
        return response.data
    except Exception as e:
-       print("❌ Error obteniendo datos de Supabase:", e)
+       print(f"❌ Error obteniendo datos de {tabla}:", e)
        return []
+
 @app.route("/", methods=["GET", "POST"])
 def index():
    if request.method == "POST":
@@ -33,7 +36,7 @@ def index():
            except Exception as e:
                print("❌ Error insertando registro:", e)
        return redirect(url_for("index"))
-   data = get_data()
+   data = get_data("imputaciones")
    if not data:
        table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
    else:
@@ -47,30 +50,30 @@ def index():
 <title>Imputaciones Smart Data</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <style>
-       body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; }
-       .container { margin-top: 50px; }
-       h1 { color: #333; text-align: center; margin-bottom: 40px; }
-       .table-container { max-height: 400px; overflow-y: auto; }
-       .img-fluid { max-height: 400px; }
-       .refresh-btn, .add-btn {
-           display: block;
-           margin: 10px auto;
-           background-color: #007bff;
-           border: none;
-           color: white;
-           padding: 10px 25px;
-           border-radius: 5px;
-           font-size: 16px;
-           cursor: pointer;
-       }
-       .refresh-btn:hover, .add-btn:hover { background-color: #0056b3; }
+   body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; }
+   .container { margin-top: 50px; }
+   h1 { color: #333; text-align: center; margin-bottom: 40px; }
+   .table-container { max-height: 400px; overflow-y: auto; }
+   .img-fluid { max-height: 400px; }
+   .refresh-btn, .add-btn {
+       display: block;
+       margin: 10px auto;
+       background-color: #007bff;
+       border: none;
+       color: white;
+       padding: 10px 25px;
+       border-radius: 5px;
+       font-size: 16px;
+       cursor: pointer;
+   }
+   .refresh-btn:hover, .add-btn:hover { background-color: #0056b3; }
 </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 <a class="navbar-brand" href="#">IMPUTACIONES SMART DATA</a>
 <div class="ml-auto">
-<a href="{{ url_for('ver_tabla') }}" class="btn btn-outline-light">📋 Ver Tabla Completa</a>
+<a href="{{ url_for('ver_tabla') }}" class="btn btn-outline-light">📋 Ver Registro Diario</a>
 </div>
 </nav>
 <div class="container">
@@ -89,7 +92,7 @@ def index():
 <tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
 </thead>
 <tbody id="data-table">
-                       {{ table_rows|safe }}
+   {{ table_rows|safe }}
 </tbody>
 </table>
 </div>
@@ -102,7 +105,6 @@ def index():
 </div>
 <script>
 function refreshData() {
-   // Recarga solo la tabla
    fetch(window.location.href)
      .then(response => response.text())
      .then(html => {
@@ -111,7 +113,6 @@ function refreshData() {
          document.getElementById("data-table").innerHTML =
              doc.getElementById("data-table").innerHTML;
      });
-   // Recarga el gráfico (cambia la URL para evitar caché)
    const chart = document.getElementById("chart");
    chart.src = "/plot.png?" + new Date().getTime();
 }
@@ -119,36 +120,54 @@ function refreshData() {
 </body>
 </html>
 """, table_rows=table_rows)
+
+# 🔹 Nueva ruta para REGISTRO_DIARIO
 @app.route("/ver_tabla")
 def ver_tabla():
-   data = get_data()
+   data = get_data("REGISTRO_DIARIO")
    if not data:
-       table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
+       table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
    else:
        table_rows = "".join(
-           f"<tr><td>{row['id']}</td><td>{row['codigo']}</td><td>{row['horas_totales']}</td></tr>"
+           f"<tr>"
+           f"<td>{row.get('Fecha', '')}</td>"
+           f"<td>{row.get('Persona', '')}</td>"
+           f"<td>{row.get('Tarea', '')}</td>"
+           f"<td>{row.get('Horas', '')}</td>"
+           f"<td>{row.get('Peticion', '')}</td>"
+           f"<td>{row.get('Porcentaje_Real', '')}</td>"
+           f"<td>{row.get('Porcentaje_NVS', '')}</td>"
+           f"</tr>"
            for row in data
        )
    return render_template_string("""
 <html>
 <head>
-<title>Tabla Completa</title>
+<title>Registro Diario</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 <a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
-<span class="navbar-text ml-3 text-white">Vista de Tabla Completa</span>
+<span class="navbar-text ml-3 text-white">Vista del Registro Diario</span>
 </nav>
 <div class="container mt-5">
-<h2 class="mb-4">Tabla de Imputaciones</h2>
+<h2 class="mb-4">Tabla REGISTRO_DIARIO</h2>
 <div class="table-responsive">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
-<tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
+<tr>
+<th>Fecha</th>
+<th>Persona</th>
+<th>Tarea</th>
+<th>Horas</th>
+<th>Peticion</th>
+<th>Porcentaje Real</th>
+<th>Porcentaje NVS</th>
+</tr>
 </thead>
 <tbody>
-               {{ table_rows|safe }}
+   {{ table_rows|safe }}
 </tbody>
 </table>
 </div>
@@ -156,9 +175,11 @@ def ver_tabla():
 </body>
 </html>
 """, table_rows=table_rows)
+
+# 🔹 Gráfico de tarta (sin cambios)
 @app.route("/plot.png")
 def plot_png():
-   data = get_data()
+   data = get_data("imputaciones")
    horas_imputadas = sum(d.get('horas_totales', 0) for d in data) if data else 0
    horas_totales = 16
    restantes = max(horas_totales - horas_imputadas, 0)
@@ -174,5 +195,6 @@ def plot_png():
    plt.close(fig)
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
+
 if __name__ == "__main__":
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
