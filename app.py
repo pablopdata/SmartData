@@ -158,13 +158,13 @@ def ver_tabla():
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>Fecha</th>
-<th>Persona</th>
-<th>Tarea</th>
-<th>Horas</th>
-<th>Peticion</th>
-<th>Porcentaje_Real</th>
-<th>Porcentaje_NVS</th>
+<th>fecha</th>
+<th>persona</th>
+<th>tarea</th>
+<th>horas</th>
+<th>peticion</th>
+<th>porcentaje_real</th>
+<th>porcentaje_nvs</th>
 </tr>
 </thead>
 <tbody>
