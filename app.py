@@ -131,13 +131,13 @@ def ver_tabla():
    else:
        table_rows = "".join(
            f"<tr>"
-           f"<td>{row.get('Fecha', '')}</td>"
-           f"<td>{row.get('Persona', '')}</td>"
-           f"<td>{row.get('Tarea', '')}</td>"
-           f"<td>{row.get('Horas', '')}</td>"
-           f"<td>{row.get('Peticion', '')}</td>"
-           f"<td>{row.get('Porcentaje_Real', '')}</td>"
-           f"<td>{row.get('Porcentaje_NVS', '')}</td>"
+           f"<td>{row.get('fecha', '')}</td>"
+           f"<td>{row.get('persona', '')}</td>"
+           f"<td>{row.get('tarea', '')}</td>"
+           f"<td>{row.get('horas', '')}</td>"
+           f"<td>{row.get('peticion', '')}</td>"
+           f"<td>{row.get('porcentaje_real', '')}</td>"
+           f"<td>{row.get('porcentaje_nvs', '')}</td>"
            f"</tr>"
            for row in data
        )
