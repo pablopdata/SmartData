@@ -10,17 +10,18 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 # Inicializa el cliente de Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# 🔹 Función para obtener datos de una tabla
+# 🔹 Función general para obtener datos desde Supabase
 def get_data(tabla):
    """Obtiene los datos desde una tabla de Supabase"""
    try:
        response = supabase.table(tabla).select("*").execute()
-       print(f"📊 Datos obtenidos de {tabla}:", response.data)
+       print(f"📊 Datos obtenidos de {tabla}: {response.data}")
        return response.data
    except Exception as e:
-       print(f"❌ Error obteniendo datos de {tabla}:", e)
+       print(f"❌ Error obteniendo datos de {tabla}: {e}")
        return []
 
+# 🔹 Página principal: Imputaciones
 @app.route("/", methods=["GET", "POST"])
 def index():
    if request.method == "POST":
@@ -41,7 +42,7 @@ def index():
        table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
    else:
        table_rows = "".join(
-           f"<tr><td>{row['id']}</td><td>{row['codigo']}</td><td>{row['horas_totales']}</td></tr>"
+           f"<tr><td>{row.get('id', '')}</td><td>{row.get('codigo', '')}</td><td>{row.get('horas_totales', '')}</td></tr>"
            for row in data
        )
    return render_template_string("""
@@ -89,7 +90,7 @@ def index():
 <div class="table-container">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
-<tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
+<tr><th>ID</th><th>Código</th><th>Horas Totales</th></tr>
 </thead>
 <tbody id="data-table">
    {{ table_rows|safe }}
@@ -121,10 +122,10 @@ function refreshData() {
 </html>
 """, table_rows=table_rows)
 
-# 🔹 Nueva ruta para REGISTRO_DIARIO
+# 🔹 Nueva página: REGISTRO_DIARIO
 @app.route("/ver_tabla")
 def ver_tabla():
-   data = get_data("REGISTRO_DIARIO")
+   data = get_data("REGISTRO_DIARIO")  # Asegúrate del nombre exacto de tu tabla en Supabase
    if not data:
        table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
    else:
@@ -161,7 +162,7 @@ def ver_tabla():
 <th>Persona</th>
 <th>Tarea</th>
 <th>Horas</th>
-<th>Peticion</th>
+<th>Petición</th>
 <th>Porcentaje Real</th>
 <th>Porcentaje NVS</th>
 </tr>
@@ -176,7 +177,7 @@ def ver_tabla():
 </html>
 """, table_rows=table_rows)
 
-# 🔹 Gráfico de tarta (sin cambios)
+# 🔹 Gráfico circular
 @app.route("/plot.png")
 def plot_png():
    data = get_data("imputaciones")
@@ -196,5 +197,6 @@ def plot_png():
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
 
+# 🔹 Ejecución
 if __name__ == "__main__":
    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
