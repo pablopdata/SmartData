@@ -132,8 +132,8 @@ def ver_tabla():
        table_rows = "".join(
            f"<tr>"
            f"<td>{row.get('fecha', '')}</td>"
-           f"<td>{row.get('persona', '')}</td>"
            f"<td>{row.get('tarea', '')}</td>"
+           f"<td>{row.get('persona', '')}</td>"
            f"<td>{row.get('horas', '')}</td>"
            f"<td>{row.get('peticion', '')}</td>"
            f"<td>{row.get('porcentaje_real', '')}</td>"
@@ -159,8 +159,8 @@ def ver_tabla():
 <thead class="thead-dark">
 <tr>
 <th>fecha</th>
-<th>persona</th>
 <th>tarea</th>
+<th>persona</th>
 <th>horas</th>
 <th>peticion</th>
 <th>porcentaje_real</th>
