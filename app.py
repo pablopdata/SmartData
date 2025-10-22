@@ -144,7 +144,7 @@ def ver_tabla():
    return render_template_string("""
 <html>
 <head>
-<title>Registro Diario</title>
+<title>registro_diario</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
