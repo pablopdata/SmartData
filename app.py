@@ -162,7 +162,7 @@ def ver_tabla():
 <th>Persona</th>
 <th>Tarea</th>
 <th>Horas</th>
-<th>Petición</th>
+<th>Peticion</th>
 <th>Porcentaje_Real</th>
 <th>Porcentaje_NVS</th>
 </tr>
