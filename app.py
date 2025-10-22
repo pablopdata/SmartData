@@ -125,7 +125,7 @@ function refreshData() {
 # 🔹 Nueva página: REGISTRO_DIARIO
 @app.route("/ver_tabla")
 def ver_tabla():
-   data = get_data("REGISTRO_DIARIO")  # Asegúrate del nombre exacto de tu tabla en Supabase
+   data = get_data("registro_diario")  # Asegúrate del nombre exacto de tu tabla en Supabase
    if not data:
        table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
    else:
@@ -153,7 +153,7 @@ def ver_tabla():
 <span class="navbar-text ml-3 text-white">Vista del Registro Diario</span>
 </nav>
 <div class="container mt-5">
-<h2 class="mb-4">Tabla REGISTRO_DIARIO</h2>
+<h2 class="mb-4">Tabla registro_diario</h2>
 <div class="table-responsive">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
