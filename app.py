@@ -20,7 +20,6 @@ def get_data():
        return []
 @app.route("/", methods=["GET", "POST"])
 def index():
-   # Si se envía el formulario, insertar nuevo registro
    if request.method == "POST":
        codigo = request.form.get("codigo")
        horas_totales = request.form.get("horas_totales")
@@ -48,34 +47,35 @@ def index():
 <title>Imputaciones Smart Data</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 <style>
-body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; }
-.container { margin-top: 50px; }
-h1 { color: #333; text-align: center; margin-bottom: 40px; }
-.table-container { max-height: 400px; overflow-y: auto; }
-.img-fluid { max-height: 400px; }
-.refresh-btn, .add-btn {
-   display: block;
-   margin: 10px auto;
-   background-color: #007bff;
-   border: none;
-   color: white;
-   padding: 10px 25px;
-   border-radius: 5px;
-   font-size: 16px;
-   cursor: pointer;
-}
-.refresh-btn:hover, .add-btn:hover { background-color: #0056b3; }
+       body { font-family: 'Arial', sans-serif; background-color: #f4f4f9; }
+       .container { margin-top: 50px; }
+       h1 { color: #333; text-align: center; margin-bottom: 40px; }
+       .table-container { max-height: 400px; overflow-y: auto; }
+       .img-fluid { max-height: 400px; }
+       .refresh-btn, .add-btn {
+           display: block;
+           margin: 10px auto;
+           background-color: #007bff;
+           border: none;
+           color: white;
+           padding: 10px 25px;
+           border-radius: 5px;
+           font-size: 16px;
+           cursor: pointer;
+       }
+       .refresh-btn:hover, .add-btn:hover { background-color: #0056b3; }
 </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 <a class="navbar-brand" href="#">IMPUTACIONES SMART DATA</a>
+<div class="ml-auto">
+<a href="{{ url_for('ver_tabla') }}" class="btn btn-outline-light">📋 Ver Tabla Completa</a>
+</div>
 </nav>
 <div class="container">
 <h1>Resumen de Imputaciones</h1>
-<!-- 🔄 Botón de refresco -->
 <button class="refresh-btn" onclick="refreshData()">🔄 Refrescar Datos</button>
-<!-- ➕ Formulario para añadir registro -->
 <form method="POST" class="text-center mb-3">
 <input type="text" name="codigo" placeholder="Código" required style="margin-right:10px;padding:5px;">
 <input type="number" name="horas_totales" placeholder="Horas Totales" required style="margin-right:10px;padding:5px;">
@@ -89,7 +89,7 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 <tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
 </thead>
 <tbody id="data-table">
-{{ table_rows|safe }}
+                       {{ table_rows|safe }}
 </tbody>
 </table>
 </div>
@@ -116,6 +116,43 @@ function refreshData() {
    chart.src = "/plot.png?" + new Date().getTime();
 }
 </script>
+</body>
+</html>
+""", table_rows=table_rows)
+@app.route("/ver_tabla")
+def ver_tabla():
+   data = get_data()
+   if not data:
+       table_rows = "<tr><td colspan='3'>No hay datos disponibles o error de conexión</td></tr>"
+   else:
+       table_rows = "".join(
+           f"<tr><td>{row['id']}</td><td>{row['codigo']}</td><td>{row['horas_totales']}</td></tr>"
+           for row in data
+       )
+   return render_template_string("""
+<html>
+<head>
+<title>Tabla Completa</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
+<span class="navbar-text ml-3 text-white">Vista de Tabla Completa</span>
+</nav>
+<div class="container mt-5">
+<h2 class="mb-4">Tabla de Imputaciones</h2>
+<div class="table-responsive">
+<table class="table table-striped table-bordered">
+<thead class="thead-dark">
+<tr><th>id</th><th>codigo</th><th>horas_totales</th></tr>
+</thead>
+<tbody>
+               {{ table_rows|safe }}
+</tbody>
+</table>
+</div>
+</div>
 </body>
 </html>
 """, table_rows=table_rows)
