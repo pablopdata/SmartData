@@ -126,6 +126,7 @@ function refreshData() {
 @app.route("/ver_tabla")
 def ver_tabla():
    data = get_data("registro_diario")  # Asegúrate del nombre exacto de tu tabla en Supabase
+   print("DEBUG registro_diario:", data)
    if not data:
        table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
    else:
