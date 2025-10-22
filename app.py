@@ -163,8 +163,8 @@ def ver_tabla():
 <th>Tarea</th>
 <th>Horas</th>
 <th>Petición</th>
-<th>Porcentaje Real</th>
-<th>Porcentaje NVS</th>
+<th>Porcentaje_Real</th>
+<th>Porcentaje_NVS</th>
 </tr>
 </thead>
 <tbody>
