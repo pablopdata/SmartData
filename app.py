@@ -125,7 +125,13 @@ function refreshData() {
 # 🔹 Nueva página: REGISTRO_DIARIO
 @app.route("/ver_tabla")
 def ver_tabla():
-   data = get_data("registro_diario")  # Asegúrate del nombre exacto de tu tabla en Supabase
+   try:
+       # Ordena por fecha descendente (más reciente primero)
+       response = supabase.table("registro_diario").select("*").order("fecha", desc=True).execute()
+       data = response.data
+   except Exception as e:
+       print(f"❌ Error obteniendo datos de registro_diario: {e}")
+       data = []
    print("DEBUG registro_diario:", data)
    if not data:
        table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
