@@ -1,0 +1,7 @@
+web: gunicorn app:app
+services:
+    - type: web
+      name: flask-app
+      env: python
+      build_command: pip install -r requirements.txt
+      start_command: gunicorn app:app
