@@ -134,11 +134,10 @@ def ver_tabla():
        data = []
    print("DEBUG registro_diario:", data)
    if not data:
-       table_rows = "<tr><td colspan='9'>No hay datos disponibles o error de conexión</td></tr>"
+       table_rows = "<tr><td colspan='7'>No hay datos disponibles o error de conexión</td></tr>"
    else:
        table_rows = "".join(
            f"<tr>"
-           f"<td>{row.get('id', '')}</td>"
            f"<td>{row.get('fecha', '')}</td>"
            f"<td>{row.get('tarea', '')}</td>"
            f"<td>{row.get('persona', '')}</td>"
@@ -146,12 +145,6 @@ def ver_tabla():
            f"<td>{row.get('peticion', '')}</td>"
            f"<td>{row.get('porcentaje_real', '')}</td>"
            f"<td>{row.get('porcentaje_nvs', '')}</td>"
-           f"<td>"
-           f"<a href='{url_for('registro_edit', id=row.get('id'))}' class='btn btn-sm btn-primary mr-1'>Editar</a>"
-           f"<form method='POST' action='{url_for('registro_delete', id=row.get('id'))}' style='display:inline;' onsubmit=\"return confirm('Eliminar registro?');\">"
-           f"<button type='submit' class='btn btn-sm btn-danger'>Eliminar</button>"
-           f"</form>"
-           f"</td>"
            f"</tr>"
            for row in data
        )
@@ -168,28 +161,10 @@ def ver_tabla():
 </nav>
 <div class="container mt-5">
 <h2 class="mb-4">Tabla registro_diario</h2>
-
-<!-- FORMULARIO DE INSERCIÓN -->
-<div class="card mb-4">
-<div class="card-body">
-<form method="POST" action="{{ url_for('registro_new') }}" class="form-inline">
-<input type="date" name="fecha" class="form-control mr-2" required>
-<input type="text" name="tarea" placeholder="tarea" class="form-control mr-2" required>
-<input type="text" name="persona" placeholder="persona" class="form-control mr-2" required>
-<input type="number" name="horas" placeholder="horas" class="form-control mr-2" required>
-<input type="text" name="peticion" placeholder="peticion" class="form-control mr-2">
-<input type="number" step="0.01" name="porcentaje_real" placeholder="% real" class="form-control mr-2">
-<input type="number" step="0.01" name="porcentaje_nvs" placeholder="% nvs" class="form-control mr-2">
-<button type="submit" class="btn btn-success">➕ Insertar</button>
-</form>
-</div>
-</div>
-
 <div class="table-responsive">
 <table class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>id</th>
 <th>fecha</th>
 <th>tarea</th>
 <th>persona</th>
@@ -197,7 +172,6 @@ def ver_tabla():
 <th>peticion</th>
 <th>porcentaje_real</th>
 <th>porcentaje_nvs</th>
-<th>Acciones</th>
 </tr>
 </thead>
 <tbody>
@@ -229,131 +203,6 @@ def plot_png():
    plt.close(fig)
    output.seek(0)
    return Response(output.getvalue(), mimetype="image/png")
-
-# 🔹 Nueva funcionalidad: CRUD completo para registro_diario
-@app.route("/registro_diario/new", methods=["POST"])
-def registro_new():
-   # Inserta nuevo registro desde el formulario
-   try:
-       fecha = request.form.get("fecha")
-       tarea = request.form.get("tarea")
-       persona = request.form.get("persona")
-       horas = request.form.get("horas")
-       peticion = request.form.get("peticion")
-       porcentaje_real = request.form.get("porcentaje_real")
-       porcentaje_nvs = request.form.get("porcentaje_nvs")
-
-       payload = {
-           "fecha": fecha,
-           "tarea": tarea,
-           "persona": persona,
-           "horas": int(horas) if horas else None,
-           "peticion": peticion,
-           "porcentaje_real": float(porcentaje_real) if porcentaje_real else None,
-           "porcentaje_nvs": float(porcentaje_nvs) if porcentaje_nvs else None
-       }
-       # Elimina claves None para evitar problemas
-       payload = {k: v for k, v in payload.items() if v is not None}
-
-       supabase.table("registro_diario").insert(payload).execute()
-       print("✅ Registro diario insertado:", payload)
-   except Exception as e:
-       print("❌ Error insertando registro_diario:", e)
-   return redirect(url_for("ver_tabla"))
-
-@app.route("/registro_diario/delete/<int:id>", methods=["POST"])
-def registro_delete(id):
-   try:
-       supabase.table("registro_diario").delete().eq("id", id).execute()
-       print(f"🗑️ Registro {id} eliminado")
-   except Exception as e:
-       print(f"❌ Error eliminando registro {id}:", e)
-   return redirect(url_for("ver_tabla"))
-
-@app.route("/registro_diario/edit/<int:id>", methods=["GET", "POST"])
-def registro_edit(id):
-   if request.method == "POST":
-       # Actualiza el registro
-       try:
-           fecha = request.form.get("fecha")
-           tarea = request.form.get("tarea")
-           persona = request.form.get("persona")
-           horas = request.form.get("horas")
-           peticion = request.form.get("peticion")
-           porcentaje_real = request.form.get("porcentaje_real")
-           porcentaje_nvs = request.form.get("porcentaje_nvs")
-
-           payload = {
-               "fecha": fecha,
-               "tarea": tarea,
-               "persona": persona,
-               "horas": int(horas) if horas else None,
-               "peticion": peticion,
-               "porcentaje_real": float(porcentaje_real) if porcentaje_real else None,
-               "porcentaje_nvs": float(porcentaje_nvs) if porcentaje_nvs else None
-           }
-           payload = {k: v for k, v in payload.items() if v is not None}
-
-           supabase.table("registro_diario").update(payload).eq("id", id).execute()
-           print(f"✏️ Registro {id} actualizado:", payload)
-       except Exception as e:
-           print(f"❌ Error actualizando registro {id}:", e)
-       return redirect(url_for("ver_tabla"))
-
-   # GET -> obtener registro y mostrar formulario de edición
-   try:
-       resp = supabase.table("registro_diario").select("*").eq("id", id).execute()
-       registros = resp.data or []
-       registro = registros[0] if registros else {}
-   except Exception as e:
-       print(f"❌ Error obteniendo registro {id} para editar:", e)
-       registro = {}
-
-   return render_template_string("""
-<html>
-<head>
-<title>Editar registro</title>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container mt-5">
-<h3>Editar registro id={{ registro.get('id', '') }}</h3>
-<form method="POST" action="{{ url_for('registro_edit', id=registro.get('id')) }}">
-<div class="form-group">
-<label>Fecha</label>
-<input type="date" name="fecha" class="form-control" value="{{ registro.get('fecha', '') }}" required>
-</div>
-<div class="form-group">
-<label>Tarea</label>
-<input type="text" name="tarea" class="form-control" value="{{ registro.get('tarea', '') }}" required>
-</div>
-<div class="form-group">
-<label>Persona</label>
-<input type="text" name="persona" class="form-control" value="{{ registro.get('persona', '') }}" required>
-</div>
-<div class="form-group">
-<label>Horas</label>
-<input type="number" name="horas" class="form-control" value="{{ registro.get('horas', '') }}">
-</div>
-<div class="form-group">
-<label>Peticion</label>
-<input type="text" name="peticion" class="form-control" value="{{ registro.get('peticion', '') }}">
-</div>
-<div class="form-group">
-<label>% Real</label>
-<input type="number" step="0.01" name="porcentaje_real" class="form-control" value="{{ registro.get('porcentaje_real', '') }}">
-</div>
-<div class="form-group">
-<label>% NVS</label>
-<input type="number" step="0.01" name="porcentaje_nvs" class="form-control" value="{{ registro.get('porcentaje_nvs', '') }}">
-</div>
-<button type="submit" class="btn btn-primary">Guardar</button>
-<a href="{{ url_for('ver_tabla') }}" class="btn btn-secondary">Cancelar</a>
-</form>
-</div>
-</body>
-</html>
-""", registro=registro)
 
 # 🔹 Ejecución
 if __name__ == "__main__":
