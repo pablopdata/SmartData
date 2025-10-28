@@ -350,7 +350,7 @@ def crear_registro():
 
 # 🔹 Editar registro
 
-@app.route("/editar_registro/<int:ID_IMPUTACION>", methods=["GET", "POST"])
+@app.route("/editar_registro/<int:registro_id>", methods=["GET", "POST"])
 
 def editar_registro(registro_id):
 
@@ -421,7 +421,7 @@ def editar_registro(registro_id):
 
 # 🔹 Eliminar registro
 
-@app.route("/eliminar_registro/<int:ID_IMPUTACION>")
+@app.route("/eliminar_registro/<int:registro_id>")
 
 def eliminar_registro(registro_id):
 
