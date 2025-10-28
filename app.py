@@ -376,7 +376,7 @@ def editar_registro(registro_id):
 
         try:
 
-            supabase.table("registro_diario").update(data).eq("ID_IMPUTACION", registro_id).execute()
+            supabase.table("registro_diario").update(data).eq("id_imputacion", registro_id).execute()
 
             print(f"✏️ Registro {registro_id} actualizado correctamente")
 
@@ -386,7 +386,7 @@ def editar_registro(registro_id):
 
         return redirect(url_for("ver_tabla"))
 
-    response = supabase.table("registro_diario").select("*").eq("ID_IMPUTACION", registro_id).single().execute()
+    response = supabase.table("registro_diario").select("*").eq("id_imputacion", registro_id).single().execute()
 
     registro = response.data
 
