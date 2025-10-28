@@ -20,7 +20,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
 # 🔹 Función general para obtener datos desde Supabase
 
 def get_data(tabla):
@@ -41,8 +40,7 @@ def get_data(tabla):
 
         return []
 
-
-# 🔹 Página principal: Imputaciones
+# 🔹 Página principal
 
 @app.route("/", methods=["GET", "POST"])
 
@@ -137,6 +135,7 @@ h1 { color: #333; text-align: center; margin-bottom: 40px; }
 <a class="navbar-brand" href="#">IMPUTACIONES SMART DATA</a>
 <div class="ml-auto">
 <a href="{{ url_for('ver_tabla') }}" class="btn btn-outline-light">📋 Ver Registro Diario</a>
+<a href="{{ url_for('ver_solicitudes') }}" class="btn btn-outline-warning ml-2">📄 Ver Solicitudes</a>
 </div>
 </nav>
 <div class="container">
@@ -198,8 +197,7 @@ function refreshData() {
 
 """, table_rows=table_rows)
 
-
-# 🔹 CRUD: Registro Diario
+# 🔹 CRUD: REGISTRO_DIARIO
 
 @app.route("/ver_tabla")
 
@@ -211,17 +209,15 @@ def ver_tabla():
 
         data = response.data
 
-        print("DEBUG registro_diario:", data)
-
     except Exception as e:
 
-        print(f"❌ Error obteniendo datos de registro_diario: {e}")
+        print(f"❌ Error obteniendo datos: {e}")
 
         data = []
 
     if not data:
 
-        table_rows = "<tr><td colspan='8'>No hay datos disponibles o error de conexión</td></tr>"
+        table_rows = "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
 
     else:
 
@@ -229,89 +225,45 @@ def ver_tabla():
 
             f"<tr>"
 
-            f"<td>{row.get('fecha', '')}</td>"
+            f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
 
-            f"<td>{row.get('tarea', '')}</td>"
+            f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
 
-            f"<td>{row.get('persona', '')}</td>"
+            f"<td>{row.get('porcentaje_real','')}</td><td>{row.get('porcentaje_nvs','')}</td>"
 
-            f"<td>{row.get('horas', '')}</td>"
+            f"<td><a href='/editar_registro/{row.get('id')}' class='btn btn-warning btn-sm'>✏️</a> "
 
-            f"<td>{row.get('peticion', '')}</td>"
-
-            f"<td>{row.get('porcentaje_real', '')}</td>"
-
-            f"<td>{row.get('porcentaje_nvs', '')}</td>"
-
-            f"<td>"
-
-            f"<a href='/editar_registro/{row.get('id')}' class='btn btn-warning btn-sm'>✏️ Editar</a> "
-
-            f"<a href='/eliminar_registro/{row.get('id')}' class='btn btn-danger btn-sm' "
-
-            f"onclick='return confirm(\"¿Seguro que quieres eliminar este registro?\")'>🗑️ Eliminar</a>"
-
-            f"</td>"
-
-            f"</tr>"
+            f"<a href='/eliminar_registro/{row.get('id')}' class='btn btn-danger btn-sm'>🗑️</a></td></tr>"
 
             for row in data
 
         )
 
     return render_template_string("""
-<html>
-<head>
-<title>Registro Diario</title>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
+<html><head><title>Registro Diario</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"></head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 <a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
-<span class="navbar-text ml-3 text-white">Vista del Registro Diario</span>
 </nav>
 <div class="container mt-5">
-<h2 class="mb-4">Tabla registro_diario</h2>
+<h2>Tabla registro_diario</h2>
 <form method="POST" action="/crear_registro" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
-<div class="col"><input type="text" name="tarea" class="form-control" placeholder="Tarea" required></div>
-<div class="col"><input type="text" name="persona" class="form-control" placeholder="Persona" required></div>
-<div class="col"><input type="number" step="0.1" name="horas" class="form-control" placeholder="Horas" required></div>
-<div class="col"><input type="text" name="peticion" class="form-control" placeholder="Petición"></div>
-<div class="col"><input type="number" name="porcentaje_real" class="form-control" placeholder="% Real"></div>
-<div class="col"><input type="number" name="porcentaje_nvs" class="form-control" placeholder="% NVS"></div>
+<div class="col"><input type="text" name="tarea" placeholder="Tarea" class="form-control" required></div>
+<div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
+<div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
+<div class="col"><input type="text" name="peticion" placeholder="Petición" class="form-control"></div>
+<div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
+<div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
-</div>
-</form>
-<div class="table-responsive">
-<table class="table table-striped table-bordered">
-<thead class="thead-dark">
-<tr>
-<th>fecha</th>
-<th>tarea</th>
-<th>persona</th>
-<th>horas</th>
-<th>peticion</th>
-<th>porcentaje_real</th>
-<th>porcentaje_nvs</th>
-<th>Acciones</th>
-</tr>
-</thead>
-<tbody>
-
-    {{ table_rows|safe }}
-</tbody>
-</table>
-</div>
-</div>
-</body>
-</html>
+</div></form>
+<table class="table table-striped table-bordered"><thead class="thead-dark">
+<tr><th>Fecha</th><th>Tarea</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
+</thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
 
 """, table_rows=table_rows)
-
-
-# 🔹 Crear registro
 
 @app.route("/crear_registro", methods=["POST"])
 
@@ -335,20 +287,9 @@ def crear_registro():
 
     }
 
-    try:
-
-        supabase.table("registro_diario").insert(data).execute()
-
-        print("✅ Registro creado correctamente:", data)
-
-    except Exception as e:
-
-        print("❌ Error al crear registro:", e)
+    supabase.table("registro_diario").insert(data).execute()
 
     return redirect(url_for("ver_tabla"))
-
-
-# 🔹 Editar registro
 
 @app.route("/editar_registro/<int:registro_id>", methods=["GET", "POST"])
 
@@ -374,34 +315,16 @@ def editar_registro(registro_id):
 
         }
 
-        try:
-
-            supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
-
-            print(f"✏️ Registro {registro_id} actualizado correctamente")
-
-        except Exception as e:
-
-            print("❌ Error al actualizar registro:", e)
+        supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
 
         return redirect(url_for("ver_tabla"))
 
-    response = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute()
-
-    registro = response.data
-
-    if not registro:
-
-        return f"<h3>No se encontró el registro con ID {registro_id}</h3>"
+    registro = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute().data
 
     return render_template_string("""
-<html>
-<head>
-<title>Editar Registro</title>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="p-5">
-<h2>Editar Registro Diario</h2>
+<html><head><title>Editar Registro</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"></head>
+<body class="p-5"><h2>Editar Registro Diario</h2>
 <form method="POST">
 <input type="date" name="fecha" value="{{ registro['fecha'] }}" class="form-control mb-2" required>
 <input type="text" name="tarea" value="{{ registro['tarea'] }}" class="form-control mb-2" required>
@@ -410,33 +333,145 @@ def editar_registro(registro_id):
 <input type="text" name="peticion" value="{{ registro['peticion'] }}" class="form-control mb-2">
 <input type="number" name="porcentaje_real" value="{{ registro['porcentaje_real'] }}" class="form-control mb-2">
 <input type="number" name="porcentaje_nvs" value="{{ registro['porcentaje_nvs'] }}" class="form-control mb-2">
-<button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
-<a href="{{ url_for('ver_tabla') }}" class="btn btn-secondary">Cancelar</a>
-</form>
-</body>
-</html>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+<a href="{{ url_for('ver_tabla') }}" class="btn btn-secondary">Cancelar</a></form></body></html>
 
-    """, registro=registro)
-
-
-# 🔹 Eliminar registro
+""", registro=registro)
 
 @app.route("/eliminar_registro/<int:registro_id>")
 
 def eliminar_registro(registro_id):
 
-    try:
-
-        supabase.table("registro_diario").delete().eq("id", registro_id).execute()
-
-        print(f"🗑️ Registro {registro_id} eliminado correctamente")
-
-    except Exception as e:
-
-        print("❌ Error al eliminar registro:", e)
+    supabase.table("registro_diario").delete().eq("id", registro_id).execute()
 
     return redirect(url_for("ver_tabla"))
 
+# 🔹 CRUD: SOLICITUDES
+
+@app.route("/ver_solicitudes")
+
+def ver_solicitudes():
+
+    try:
+
+        response = supabase.table("solicitudes").select("*").order("id", desc=True).execute()
+
+        data = response.data
+
+    except Exception as e:
+
+        print(f"❌ Error obteniendo datos de solicitudes: {e}")
+
+        data = []
+
+    if not data:
+
+        table_rows = "<tr><td colspan='6'>No hay datos disponibles</td></tr>"
+
+    else:
+
+        table_rows = "".join(
+
+            f"<tr><td>{row.get('id','')}</td><td>{row.get('fecha','')}</td>"
+
+            f"<td>{row.get('solicitante','')}</td><td>{row.get('descripcion','')}</td>"
+
+            f"<td>{row.get('estado','')}</td>"
+
+            f"<td><a href='/editar_solicitud/{row.get('id')}' class='btn btn-warning btn-sm'>✏️</a> "
+
+            f"<a href='/eliminar_solicitud/{row.get('id')}' class='btn btn-danger btn-sm'>🗑️</a></td></tr>"
+
+            for row in data
+
+        )
+
+    return render_template_string("""
+<html><head><title>Solicitudes</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"></head>
+<body><nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a></nav>
+<div class="container mt-5">
+<h2>Tabla de Solicitudes</h2>
+<form method="POST" action="/crear_solicitud" class="mb-4">
+<div class="form-row">
+<div class="col"><input type="date" name="fecha" class="form-control" required></div>
+<div class="col"><input type="text" name="solicitante" placeholder="Solicitante" class="form-control" required></div>
+<div class="col"><input type="text" name="descripcion" placeholder="Descripción" class="form-control" required></div>
+<div class="col"><input type="text" name="estado" placeholder="Estado" class="form-control" required></div>
+<div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
+</div></form>
+<table class="table table-striped table-bordered"><thead class="thead-dark">
+<tr><th>ID</th><th>Fecha</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr>
+</thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
+
+""", table_rows=table_rows)
+
+@app.route("/crear_solicitud", methods=["POST"])
+
+def crear_solicitud():
+
+    data = {
+
+        "fecha": request.form.get("fecha"),
+
+        "solicitante": request.form.get("solicitante"),
+
+        "descripcion": request.form.get("descripcion"),
+
+        "estado": request.form.get("estado")
+
+    }
+
+    supabase.table("solicitudes").insert(data).execute()
+
+    return redirect(url_for("ver_solicitudes"))
+
+@app.route("/editar_solicitud/<int:solicitud_id>", methods=["GET", "POST"])
+
+def editar_solicitud(solicitud_id):
+
+    if request.method == "POST":
+
+        data = {
+
+            "fecha": request.form.get("fecha"),
+
+            "solicitante": request.form.get("solicitante"),
+
+            "descripcion": request.form.get("descripcion"),
+
+            "estado": request.form.get("estado")
+
+        }
+
+        supabase.table("solicitudes").update(data).eq("id", solicitud_id).execute()
+
+        return redirect(url_for("ver_solicitudes"))
+
+    solicitud = supabase.table("solicitudes").select("*").eq("id", solicitud_id).single().execute().data
+
+    return render_template_string("""
+<html><head><title>Editar Solicitud</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet"></head>
+<body class="p-5"><h2>Editar Solicitud</h2>
+<form method="POST">
+<input type="date" name="fecha" value="{{ solicitud['fecha'] }}" class="form-control mb-2" required>
+<input type="text" name="solicitante" value="{{ solicitud['solicitante'] }}" class="form-control mb-2" required>
+<input type="text" name="descripcion" value="{{ solicitud['descripcion'] }}" class="form-control mb-2" required>
+<input type="text" name="estado" value="{{ solicitud['estado'] }}" class="form-control mb-2" required>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+<a href="{{ url_for('ver_solicitudes') }}" class="btn btn-secondary">Cancelar</a></form></body></html>
+
+""", solicitud=solicitud)
+
+@app.route("/eliminar_solicitud/<int:solicitud_id>")
+
+def eliminar_solicitud(solicitud_id):
+
+    supabase.table("solicitudes").delete().eq("id", solicitud_id).execute()
+
+    return redirect(url_for("ver_solicitudes"))
 
 # 🔹 Gráfico circular
 
@@ -476,11 +511,9 @@ def plot_png():
 
     return Response(output.getvalue(), mimetype="image/png")
 
-
 # 🔹 Ejecución
 
 if __name__ == "__main__":
 
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
  
-
