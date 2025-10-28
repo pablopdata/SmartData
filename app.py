@@ -350,7 +350,7 @@ def crear_registro():
 
 # 🔹 Editar registro
 
-@app.route("/editar_registro/<int:registro_id>", methods=["GET", "POST"])
+@app.route("/editar_registro/<int:ID_IMPUTACION>", methods=["GET", "POST"])
 
 def editar_registro(registro_id):
 
@@ -376,7 +376,7 @@ def editar_registro(registro_id):
 
         try:
 
-            supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
+            supabase.table("registro_diario").update(data).eq("ID_IMPUTACION", registro_id).execute()
 
             print(f"✏️ Registro {registro_id} actualizado correctamente")
 
@@ -421,7 +421,7 @@ def editar_registro(registro_id):
 
 # 🔹 Eliminar registro
 
-@app.route("/eliminar_registro/<int:registro_id>")
+@app.route("/eliminar_registro/<int:ID_IMPUTACION>")
 
 def eliminar_registro(registro_id):
 
