@@ -1,14 +1,7 @@
 from flask import Blueprint, request, redirect, url_for, render_template_string
 
-from supabase import create_client, Client
+from db import supabase
 
-# 🔹 Configura tu conexión a Supabase
-
-SUPABASE_URL = "TU_SUPABASE_URL"
-
-SUPABASE_KEY = "TU_SUPABASE_KEY"
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 🔹 Define el Blueprint
 

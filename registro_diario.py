@@ -52,7 +52,7 @@ def ver_tabla():
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-<a class="navbar-brand" href="{{ url_for('imputaciones.index') }}">← Volver</a>
+<a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
 </nav>
 <div class="container mt-5">
 <h2>Tabla registro_diario</h2>
