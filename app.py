@@ -245,9 +245,9 @@ def ver_tabla():
 
             f"<td>"
 
-            f"<a href='/editar_registro/{row.get('ID_IMPUTACION')}' class='btn btn-warning btn-sm'>✏️ Editar</a> "
+            f"<a href='/editar_registro/{row.get('id')}' class='btn btn-warning btn-sm'>✏️ Editar</a> "
 
-            f"<a href='/eliminar_registro/{row.get('ID_IMPUTACION')}' class='btn btn-danger btn-sm' "
+            f"<a href='/eliminar_registro/{row.get('id')}' class='btn btn-danger btn-sm' "
 
             f"onclick='return confirm(\"¿Seguro que quieres eliminar este registro?\")'>🗑️ Eliminar</a>"
 
@@ -376,7 +376,7 @@ def editar_registro(registro_id):
 
         try:
 
-            supabase.table("registro_diario").update(data).eq("id_imputacion", registro_id).execute()
+            supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
 
             print(f"✏️ Registro {registro_id} actualizado correctamente")
 
@@ -386,7 +386,7 @@ def editar_registro(registro_id):
 
         return redirect(url_for("ver_tabla"))
 
-    response = supabase.table("registro_diario").select("*").eq("id_imputacion", registro_id).single().execute()
+    response = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute()
 
     registro = response.data
 
@@ -427,7 +427,7 @@ def eliminar_registro(registro_id):
 
     try:
 
-        supabase.table("registro_diario").delete().eq("ID_IMPUTACION", registro_id).execute()
+        supabase.table("registro_diario").delete().eq("id", registro_id).execute()
 
         print(f"🗑️ Registro {registro_id} eliminado correctamente")
 
