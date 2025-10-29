@@ -1,4 +1,7 @@
 from supabase import create_client, Client
+import io
+
+import os
 
 # Configura tu conexión a Supabase
 
