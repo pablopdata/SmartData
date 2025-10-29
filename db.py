@@ -1,10 +1,10 @@
 from supabase import create_client, Client
 
-# ✅ Configura tu conexión a Supabase
+# Configura tu conexión a Supabase
 
-SUPABASE_URL = "SUPABASE_URL"
+SUPABASE_URL = os.getenv("SUPABASE_URL")
 
-SUPABASE_KEY = "SUPABASE_KEY"
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # 🔹 Crea el cliente global de conexión
 
