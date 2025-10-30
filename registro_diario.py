@@ -75,7 +75,7 @@ def ver_tabla():
 </div>
 
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
-<div class="col"><input type="number" step="0.1" name="peticion" placeholder="peticion" class="form-control" required></div>
+<div class="col"><input type="text" step="0.1" name="peticion" placeholder="Petición" class="form-control" required></div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
