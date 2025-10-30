@@ -22,6 +22,13 @@ def ver_tabla():
         print(f"❌ Error obteniendo solicitudes: {e}")
         solicitudes = []
 
+    try:
+        personas_response = supabase.table("personas").select("nombre").execute()
+        personas = [row["nombre"] for row in personas_response.data]
+    except Exception as e:
+    print(f"❌ Error obteniendo personas: {e}")
+    personas = []    
+
     table_rows = "".join(
         f"<tr>"
         f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
@@ -45,7 +52,7 @@ def ver_tabla():
     <a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
 </nav>
 <div class="container mt-5">
-<h2>Tabla registro_diario</h2>
+<h2>Tabla Imputaciones</h2>
 <form method="POST" action="{{ url_for('registro.crear_registro') }}" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
@@ -56,7 +63,15 @@ def ver_tabla():
         {% endfor %}
     </select>
 </div>
-<div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
+
+<div class="col">
+    <select name="persona" class="form-control">
+        {% for persona in personas %}
+            <option value="{{ persona }}">{{ persona }}</option>
+        {% endfor %}
+    </select>
+</div>
+
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
@@ -132,6 +147,11 @@ def editar_registro(registro_id):
     solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
     solicitudes = [row["solicitud"] for row in solicitudes_response.data]
 
+    
+    personas_response = supabase.table("personas").select("nombre").execute()
+    personas = [row["nombre"] for row in personas_response.data]
+
+
     return render_template_string("""
 <html>
 <head><title>Editar Registro</title>
@@ -141,8 +161,20 @@ def editar_registro(registro_id):
 <h2>Editar Registro Diario</h2>
 <form method="POST">
 <input type="date" name="fecha" value="{{ registro['fecha'] }}" class="form-control mb-2" required>
-<input type="text" name="tarea" value="{{ registro['tarea'] }}" class="form-control mb-2" required>
-<input type="text" name="persona" value="{{ registro['persona'] }}" class="form-control mb-2" required>
+<div class="col">
+    <select name="peticion" class="form-control">
+        {% for opcion in solicitudes %}
+            <option value="{{ opcion }}">{{ opcion }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="col">
+    <select name="persona" class="form-control">
+        {% for persona in personas %}
+            <option value="{{ persona }}">{{ persona }}</option>
+        {% endfor %}
+    </select>
+</div>
 <input type="number" step="0.1" name="horas" value="{{ registro['horas'] }}" class="form-control mb-2" required>
 <input type="text" name="peticion" value="{{ registro['peticion'] }}" class="form-control mb-2">
 <input type="number" name="porcentaje_real" value="{{ registro['porcentaje_real'] }}" class="form-control mb-2">
