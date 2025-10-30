@@ -16,8 +16,8 @@ def ver_tabla():
         data = []
 
     try:
-        solicitudes_response = supabase.table("solicitudes").select("nombre").execute()
-        solicitudes = [row["nombre"] for row in solicitudes_response.data]
+        solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
+        solicitudes = [row["solicitud"] for row in solicitudes_response.data]
     except Exception as e:
         print(f"❌ Error obteniendo solicitudes: {e}")
         solicitudes = []
@@ -93,6 +93,7 @@ def crear_registro():
     }
 
     supabase.table("registro_diario").insert(data).execute()
+    
 
     return redirect(url_for("registro.ver_tabla"))
 
@@ -127,6 +128,10 @@ def editar_registro(registro_id):
         return redirect(url_for("registro.ver_tabla"))
 
     registro = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute().data
+
+    
+    solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
+    solicitudes = [row["solicitud"] for row in solicitudes_response.data]
 
     return render_template_string("""
 <html>
