@@ -16,11 +16,11 @@ def ver_tabla():
         data = []
 
     try:
-        solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
-        solicitudes = [row["solicitud"] for row in solicitudes_response.data]
+        solicitudes_response = supabase.table("solicitudes").select("nombre").execute()
+        solicitudes = [row["nombre"] for row in solicitudes_response.data]
     except Exception as e:
-    print(f"❌ Error obteniendo solicitudes: {e}")
-        solicitudes = []    
+        print(f"❌ Error obteniendo solicitudes: {e}")
+        solicitudes = []
 
     table_rows = "".join(
         f"<tr>"
@@ -34,7 +34,7 @@ def ver_tabla():
         for row in data
     ) if data else "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
 
-   return render_template_string("""
+    return render_template_string("""
 <html>
 <head>
 <title>Registro Diario</title>
@@ -52,7 +52,8 @@ def ver_tabla():
 <div class="col"><input type="text" name="tarea" placeholder="Tarea" class="form-control" required></div>
 <div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
-<div class="colselect name="peticion" class="form-control">
+<div class="col">
+    <select name="peticion" class="form-control">
         {% for opcion in solicitudes %}
             <option value="{{ opcion }}">{{ opcion }}</option>
         {% endfor %}
