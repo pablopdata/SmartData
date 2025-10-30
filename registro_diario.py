@@ -59,7 +59,7 @@ def ver_tabla():
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
 <div class="col">
-    <select name="peticion" class="form-control">
+    <select name="solicitud" class="form-control">
         {% for opcion in solicitudes %}
             <option value="{{ opcion }}">{{ opcion }}</option>
         {% endfor %}
@@ -94,7 +94,7 @@ def crear_registro():
 
         "fecha": request.form.get("fecha"),
 
-        "tarea": request.form.get("tarea"),
+        "solicitud": request.form.get("solicitud"),
 
         "persona": request.form.get("persona"),
 
