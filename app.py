@@ -28,9 +28,7 @@ def index():
     <title>Panel Principal</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
+        body { background-color: #f8f9fa; }
         .dashboard-placeholder {
             height: 70vh;
             display: flex;
@@ -47,7 +45,7 @@ def index():
 <body>
     <!-- Navbar superior -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">🧭 Panel Principal</a>
+        <a class="navbar-brand" href="{{ url_for('index') }}">🧭 Panel Principal</a>
         <div class="ml-auto">
             <a href="{{ url_for('registro.ver_tabla') }}" class="btn btn-primary mr-2">📅 Registro Diario</a>
             <a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-success">📝 Solicitudes</a>
