@@ -16,7 +16,7 @@ def ver_tabla():
         data = []
 
     try:
-        solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
+        solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
         solicitudes = [row["solicitud"] for row in solicitudes_response.data]
     except Exception as e:
         print(f"❌ Error obteniendo solicitudes: {e}")
@@ -49,9 +49,6 @@ def ver_tabla():
 <form method="POST" action="{{ url_for('registro.crear_registro') }}" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
-<div class="col"><input type="text" name="tarea" placeholder="Tarea" class="form-control" required></div>
-<div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
-<div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
 <div class="col">
     <select name="peticion" class="form-control">
         {% for opcion in solicitudes %}
@@ -59,6 +56,8 @@ def ver_tabla():
         {% endfor %}
     </select>
 </div>
+<div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
+<div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
@@ -130,7 +129,7 @@ def editar_registro(registro_id):
     registro = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute().data
 
     
-    solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
+    solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
     solicitudes = [row["solicitud"] for row in solicitudes_response.data]
 
     return render_template_string("""
