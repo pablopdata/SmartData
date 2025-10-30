@@ -19,9 +19,7 @@ app.register_blueprint(solicitudes_bp, url_prefix="/solicitudes")
 # ==============================
 
 @app.route("/")
-
 def index():
-
     return render_template_string("""
 <html>
 <head>
@@ -32,7 +30,7 @@ def index():
 <div class="container text-center mt-5">
 <h1 class="mb-4">🧭 Panel Principal</h1>
 <div class="list-group">
-<a href="{{ url_for('registro.ver_registro') }}" class="list-group-item list-group-item-action list-group-item-primary">📅 Registro Diario</a>
+<a href="{{ url_for('registro.ver_tabla') }}" class="list-group-item list-group-item-action list-group-item-primary">📅 Registro Diario</a>
 <a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="list-group-item list-group-item-action list-group-item-success">📝 Solicitudes</a>
 </div>
 <br>
@@ -40,7 +38,6 @@ def index():
 </div>
 </body>
 </html>
-
     """)
 
 # ==============================
