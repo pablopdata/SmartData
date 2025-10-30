@@ -33,7 +33,7 @@ def ver_tabla():
 
     table_rows = "".join(
         f"<tr>"
-        f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
+        f"<td>{row.get('fecha','')}</td><td>{row.get('solicitud','')}</td><td>{row.get('persona','')}</td>"
         f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
         f"<td>{row.get('porcentaje_real','')}</td><td>{row.get('porcentaje_nvs','')}</td>"
         f"<td>"
@@ -81,7 +81,7 @@ def ver_tabla():
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
 </div></form>
 <table class="table table-striped table-bordered"><thead class="thead-dark">
-<tr><th>Fecha</th><th>Tarea</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
+<tr><th>Fecha</th><th>solicitud</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
 </thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
 """, table_rows=table_rows, solicitudes=solicitudes, personas=personas)
 
@@ -126,7 +126,7 @@ def editar_registro(registro_id):
 
             "fecha": request.form.get("fecha"),
 
-            "tarea": request.form.get("tarea"),
+            "Solicitud": request.form.get("solicitud"),
 
             "persona": request.form.get("persona"),
 
