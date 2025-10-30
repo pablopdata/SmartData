@@ -22,12 +22,14 @@ def ver_tabla():
         print(f"❌ Error obteniendo solicitudes: {e}")
         solicitudes = []
 
+    
     try:
         personas_response = supabase.table("personas").select("nombre").execute()
         personas = [row["nombre"] for row in personas_response.data]
     except Exception as e:
     print(f"❌ Error obteniendo personas: {e}")
-    personas = []    
+        personas = []
+  
 
     table_rows = "".join(
         f"<tr>"
@@ -147,7 +149,6 @@ def editar_registro(registro_id):
     solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
     solicitudes = [row["solicitud"] for row in solicitudes_response.data]
 
-    
     personas_response = supabase.table("personas").select("nombre").execute()
     personas = [row["nombre"] for row in personas_response.data]
 
