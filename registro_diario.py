@@ -27,7 +27,7 @@ def ver_tabla():
         personas_response = supabase.table("personas").select("nombre").execute()
         personas = [row["nombre"] for row in personas_response.data]
     except Exception as e:
-    print(f"❌ Error obteniendo personas: {e}")
+        print(f"❌ Error obteniendo personas: {e}")
         personas = []
   
 
@@ -82,7 +82,7 @@ def ver_tabla():
 <table class="table table-striped table-bordered"><thead class="thead-dark">
 <tr><th>Fecha</th><th>Tarea</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
 </thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
-""", table_rows=table_rows, solicitudes=solicitudes)
+""", table_rows=table_rows, solicitudes=solicitudes, personas=personas)
 
 # 🔹 Crear nuevo registro
 
