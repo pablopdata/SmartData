@@ -15,6 +15,13 @@ def ver_tabla():
         print(f"❌ Error obteniendo datos: {e}")
         data = []
 
+    try:
+        solicitudes_response = supabase.table("solicitudes").select("solicitud").execute()
+        solicitudes = [row["solicitud"] for row in solicitudes_response.data]
+    except Exception as e:
+    print(f"❌ Error obteniendo solicitudes: {e}")
+        solicitudes = []    
+
     table_rows = "".join(
         f"<tr>"
         f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
@@ -27,7 +34,7 @@ def ver_tabla():
         for row in data
     ) if data else "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
 
-    return render_template_string("""
+   return render_template_string("""
 <html>
 <head>
 <title>Registro Diario</title>
@@ -45,7 +52,12 @@ def ver_tabla():
 <div class="col"><input type="text" name="tarea" placeholder="Tarea" class="form-control" required></div>
 <div class="col"><input type="text" name="persona" placeholder="Persona" class="form-control" required></div>
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
-<div class="col"><input type="text" name="peticion" placeholder="Petición" class="form-control"></div>
+<div class="colselect name="peticion" class="form-control">
+        {% for opcion in solicitudes %}
+            <option value="{{ opcion }}">{{ opcion }}</option>
+        {% endfor %}
+    </select>
+</div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
@@ -53,7 +65,7 @@ def ver_tabla():
 <table class="table table-striped table-bordered"><thead class="thead-dark">
 <tr><th>Fecha</th><th>Tarea</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
 </thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
-""", table_rows=table_rows)
+""", table_rows=table_rows, solicitudes=solicitudes)
 
 # 🔹 Crear nuevo registro
 
