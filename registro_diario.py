@@ -7,34 +7,27 @@ registro_bp = Blueprint("registro", __name__)
 # 🔹 Mostrar tabla de registro diario
 
 @registro_bp.route("/ver_tabla")
-
 def ver_tabla():
-
     try:
-
         response = supabase.table("registro_diario").select("*").order("fecha", desc=True).execute()
-
         data = response.data
-
     except Exception as e:
-
         print(f"❌ Error obteniendo datos: {e}")
-
         data = []
 
     table_rows = "".join(
-    f"<tr>"
-    f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
-    f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
-    f"<td>{row.get('porcentaje_real','')}</td><td>{row.get('porcentaje_nvs','')}</td>"
-    f"<td>"
-    f"<a href='{url_for('registro.editar_registro', registro_id=row.get('id'))}' class='btn btn-warning btn-sm'>✏️</a> "
-    f"<a href='{url_for('registro.eliminar_registro', registro_id=row.get('id'))}' class='btn btn-danger btn-sm'>🗑️</a>"
-    f"</td></tr>"
-    for row in data
-) if data else "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
+        f"<tr>"
+        f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
+        f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
+        f"<td>{row.get('porcentaje_real','')}</td><td>{row.get('porcentaje_nvs','')}</td>"
+        f"<td>"
+        f"<a href='{url_for('registro.editar_registro', registro_id=row.get('id'))}' class='btn btn-warning btn-sm'>✏️</a> "
+        f"<a href='{url_for('registro.eliminar_registro', registro_id=row.get('id'))}' class='btn btn-danger btn-sm'>🗑️</a>"
+        f"</td></tr>"
+        for row in data
+    ) if data else "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
 
-   return render_template_string("""
+    return render_template_string("""
 <html>
 <head>
 <title>Registro Diario</title>
@@ -46,7 +39,7 @@ def ver_tabla():
 </nav>
 <div class="container mt-5">
 <h2>Tabla registro_diario</h2>
-<form methodregistro.crear_registro') }}" class="mb-4">
+<form method="POST" action="{{ url_for('registro.crear_registro') }}" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
 <div class="col"><input type="text" name="tarea" placeholder="Tarea" class="form-control" required></div>
