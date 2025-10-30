@@ -126,7 +126,7 @@ def editar_registro(registro_id):
 
             "fecha": request.form.get("fecha"),
 
-            "Solicitud": request.form.get("solicitud"),
+            "solicitud": request.form.get("solicitud"),
 
             "persona": request.form.get("persona"),
 
