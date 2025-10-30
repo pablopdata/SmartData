@@ -21,21 +21,45 @@ app.register_blueprint(solicitudes_bp, url_prefix="/solicitudes")
 @app.route("/")
 def index():
     return render_template_string("""
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-<title>Panel Principal</title>
-<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Panel Principal</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .dashboard-placeholder {
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 1.5rem;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container text-center mt-5">
-<h1 class="mb-4">🧭 Panel Principal</h1>
-<div class="list-group">
-<a href="{{ url_for('registro.ver_tabla') }}" class="list-group-item list-group-item-action list-group-item-primary">📅 Registro Diario</a>
-<a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="list-group-item list-group-item-action list-group-item-success">📝 Solicitudes</a>
-</div>
-<br>
-<footer class="text-muted mt-5">Desarrollado por José Enrique Gallego</footer>
-</div>
+<body>
+    <!-- Navbar superior -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">🧭 Panel Principal</a>
+        <div class="ml-auto">
+            <a href="{{ url_for('registro.ver_tabla') }}" class="btn btn-primary mr-2">📅 Registro Diario</a>
+            <a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-success">📝 Solicitudes</a>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="container mt-4">
+        <div class="dashboard-placeholder">
+            Aquí irá el Dashboard de estadísticas 📊
+        </div>
+    </div>
 </body>
 </html>
     """)
