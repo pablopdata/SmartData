@@ -75,6 +75,7 @@ def ver_tabla():
 </div>
 
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
+<div class="col"><input type="number" step="0.1" name="peticion" placeholder="peticion" class="form-control" required></div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
@@ -163,7 +164,7 @@ def editar_registro(registro_id):
 <form method="POST">
 <input type="date" name="fecha" value="{{ registro['fecha'] }}" class="form-control mb-2" required>
 <div class="col">
-    <select name="peticion" class="form-control">
+    <select name="solicitud" class="form-control">
         {% for opcion in solicitudes %}
             <option value="{{ opcion }}">{{ opcion }}</option>
         {% endfor %}
