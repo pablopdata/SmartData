@@ -16,6 +16,8 @@ def ver_solicitudes():
 
     try:
 
+        # Obtener solicitudes y personas
+
         solicitudes_res = supabase.table("solicitudes").select("*").order("id_solicitud", desc=True).execute()
 
         solicitudes = solicitudes_res.data or []
@@ -32,7 +34,7 @@ def ver_solicitudes():
 
         print(f"❌ Error obteniendo datos: {e}")
 
-        solicitudes, personas_dict, personas = [], {}, []
+        solicitudes, personas_dict = [], {}
 
     # Generar filas de la tabla
 
@@ -78,21 +80,19 @@ def ver_solicitudes():
 
         )
 
+    # Renderizar plantilla HTML con DataTables integrado
+
     return render_template_string("""
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-<title>Solicitudes</title>
+<meta charset="UTF-8">
+<title>Gestión de Solicitudes</title>
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-<style>
-
-  body { background-color: #f8f9fa; }
-
-  th, td { white-space: nowrap; text-align: center; vertical-align: middle; }
-
-  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-  table { min-width: 1300px; }
-</style>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -101,6 +101,7 @@ def ver_solicitudes():
 </nav>
 <div class="container mt-5">
 <h2 class="mb-4">Tabla de Solicitudes</h2>
+<!-- Formulario de creación -->
 <form method="POST" action="{{ url_for('solicitudes.crear_solicitud') }}" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="text" name="tarea" class="form-control" placeholder="Tarea" required></div>
@@ -132,13 +133,22 @@ def ver_solicitudes():
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
 </div>
 </form>
-<div class="table-responsive" style="max-width: 100%; overflow-x: auto;">
-<table class="table table-striped table-bordered table-hover">
+<!-- Tabla -->
+<div class="table-responsive">
+<table id="solicitudesTable" class="table table-striped table-bordered">
 <thead class="thead-dark">
 <tr>
-<th>Tarea</th><th>URL NVS</th><th>Petición</th><th>ID Moda</th><th>URL Moda</th>
-<th>Horas Totales</th><th>Fecha Inicio</th><th>Fecha Fin</th>
-<th>Persona</th><th>Completada</th><th>Acciones</th>
+<th>Tarea</th>
+<th>URL NVS</th>
+<th>Petición</th>
+<th>ID Moda</th>
+<th>URL Moda</th>
+<th>Horas Totales</th>
+<th>Fecha Inicio</th>
+<th>Fecha Fin</th>
+<th>Persona</th>
+<th>Completada</th>
+<th>Acciones</th>
 </tr>
 </thead>
 <tbody>
@@ -148,6 +158,24 @@ def ver_solicitudes():
 </table>
 </div>
 </div>
+<script>
+
+$(document).ready(function() {
+
+  $('#solicitudesTable').DataTable({
+
+    "pageLength": 10,
+
+    "language": {
+
+      "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+
+    }
+
+  });
+
+});
+</script>
 </body>
 </html>
 
@@ -217,6 +245,8 @@ def editar_solicitud(id_solicitud):
 
             "tarea": request.form.get("tarea"),
 
+            "persona_id": request.form.get("persona_id"),
+
             "url_nvs": request.form.get("url_nvs"),
 
             "peticion": request.form.get("peticion"),
@@ -231,8 +261,6 @@ def editar_solicitud(id_solicitud):
 
             "fecha_fin": request.form.get("fecha_fin"),
 
-            "persona_id": request.form.get("persona_id"),
-
             "completada": request.form.get("completada") == "true"
 
         }
@@ -241,7 +269,7 @@ def editar_solicitud(id_solicitud):
 
             supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
 
-            print(f"✏️ Solicitud {id_solicitud} actualizada correctamente")
+            print(f"✏️ Solicitud {id_solicitud} actualizada")
 
         except Exception as e:
 
@@ -249,9 +277,9 @@ def editar_solicitud(id_solicitud):
 
         return redirect(url_for("solicitudes.ver_solicitudes"))
 
-    solicitud_res = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
+    response = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
 
-    solicitud = solicitud_res.data
+    solicitud = response.data
 
     personas = supabase.table("personas").select("id, nombre").execute().data
 
@@ -262,7 +290,7 @@ def editar_solicitud(id_solicitud):
 </head><body class="p-5">
 <h2>Editar Solicitud</h2>
 <form method="POST">
-<input type="text" name="tarea" value="{{ solicitud['tarea'] }}" class="form-control mb-2" required>
+<input type="text" name="tarea" value="{{ solicitud['tarea'] }}" class="form-control mb-2">
 <input type="text" name="url_nvs" value="{{ solicitud['url_nvs'] }}" class="form-control mb-2">
 <input type="text" name="peticion" value="{{ solicitud['peticion'] }}" class="form-control mb-2">
 <input type="text" name="id_moda" value="{{ solicitud['id_moda'] }}" class="form-control mb-2">
@@ -270,7 +298,7 @@ def editar_solicitud(id_solicitud):
 <input type="number" step="0.1" name="horas_totales" value="{{ solicitud['horas_totales'] }}" class="form-control mb-2">
 <input type="date" name="fecha_inicio" value="{{ solicitud['fecha_inicio'] }}" class="form-control mb-2">
 <input type="date" name="fecha_fin" value="{{ solicitud['fecha_fin'] }}" class="form-control mb-2">
-<select name="persona_id" class="form-control mb-2" required>
+<select name="persona_id" class="form-control mb-2">
 
   {% for p in personas %}
 <option value="{{ p['id'] }}" {% if p['id'] == solicitud['persona_id'] %}selected{% endif %}>{{ p['nombre'] }}</option>
@@ -281,7 +309,7 @@ def editar_solicitud(id_solicitud):
 <option value="false" {% if not solicitud['completada'] %}selected{% endif %}>❌ No Completada</option>
 <option value="true" {% if solicitud['completada'] %}selected{% endif %}>✅ Completada</option>
 </select>
-<button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
 <a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-secondary">Cancelar</a>
 </form>
 </body></html>
@@ -303,7 +331,7 @@ def eliminar_solicitud(id_solicitud):
 
         supabase.table("solicitudes").delete().eq("id_solicitud", id_solicitud).execute()
 
-        print(f"🗑️ Solicitud {id_solicitud} eliminada correctamente")
+        print(f"🗑️ Solicitud {id_solicitud} eliminada")
 
     except Exception as e:
 
