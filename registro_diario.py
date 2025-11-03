@@ -210,8 +210,8 @@ def editar_registro(registro_id):
 </select>
 <input type="number" step="0.1" name="horas" value="{{ registro['horas'] }}" class="form-control mb-2" required>
 <input type="text" name="peticion" value="{{ registro['peticion'] }}" class="form-control mb-2">
-<input type="number" name="porcentaje_real" value="{{ registro['porcentaje_real'] }}" class="form-control mb-2">
-<input type="number" name="porcentaje_nvs" value="{{ registro['porcentaje_nvs'] }}" class="form-control mb-2">
+<input type="text" name="porcentaje_real" value="{{ registro['porcentaje_real'] }}" class="form-control mb-2">
+<input type="text" name="porcentaje_nvs" value="{{ registro['porcentaje_nvs'] }}" class="form-control mb-2">
 <button type="submit" class="btn btn-primary">💾 Guardar</button>
 <a href="{{ url_for('registro.ver_tabla') }}" class="btn btn-secondary">Cancelar</a>
 </form>
