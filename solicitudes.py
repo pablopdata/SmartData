@@ -188,3 +188,123 @@ def crear_solicitud():
 
     return redirect(url_for("solicitudes.ver_solicitudes"))
  
+
+
+# ==============================
+
+# 🔹 EDITAR SOLICITUD
+
+# ==============================
+
+@solicitudes_bp.route("/editar_solicitud/<int:id_solicitud>", methods=["GET", "POST"])
+
+def editar_solicitud(id_solicitud):
+
+    if request.method == "POST":
+
+        data = {
+
+            "tarea": request.form.get("tarea"),
+
+            "persona": request.form.get("persona"),
+
+            "url_nvs": request.form.get("url_nvs"),
+
+            "peticion": request.form.get("peticion"),
+
+            "id_moda": request.form.get("id_moda"),
+
+            "url_moda": request.form.get("url_moda"),
+
+            "horas_totales": float(request.form.get("horas_totales") or 0),
+
+            "fecha_inicio": request.form.get("fecha_inicio"),
+
+            "fecha_fin": request.form.get("fecha_fin"),
+
+            "completada": request.form.get("completada") == "true"
+
+        }
+
+        try:
+
+            supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
+
+            print(f"✏️ Solicitud {id_solicitud} actualizada")
+
+        except Exception as e:
+
+            print("❌ Error actualizando solicitud:", e)
+
+        return redirect(url_for("solicitudes.ver_solicitudes"))
+
+    response = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
+
+    solicitud = response.data
+
+    tareas = [r["tarea"] for r in supabase.table("tareas").select("tarea").execute().data]
+
+    personas = [r["nombre"] for r in supabase.table("personas").select("nombre").execute().data]
+
+    return render_template_string("""
+<html><head>
+<title>Editar Solicitud</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head><body class="p-5">
+<h2>Editar Solicitud</h2>
+<form method="POST">
+<select name="tarea" class="form-control mb-2">
+
+{% for t in tareas %}
+<option value="{{ t }}" {% if t == solicitud['tarea'] %}selected{% endif %}>{{ t }}</option>
+
+{% endfor %}
+</select>
+<select name="persona" class="form-control mb-2">
+
+{% for p in personas %}
+<option value="{{ p }}" {% if p == solicitud['persona'] %}selected{% endif %}>{{ p }}</option>
+
+{% endfor %}
+</select>
+<input type="text" name="url_nvs" value="{{ solicitud['url_nvs'] }}" class="form-control mb-2">
+<input type="text" name="peticion" value="{{ solicitud['peticion'] }}" class="form-control mb-2">
+<input type="text" name="id_moda" value="{{ solicitud['id_moda'] }}" class="form-control mb-2">
+<input type="text" name="url_moda" value="{{ solicitud['url_moda'] }}" class="form-control mb-2">
+<input type="number" step="0.1" name="horas_totales" value="{{ solicitud['horas_totales'] }}" class="form-control mb-2">
+<input type="date" name="fecha_inicio" value="{{ solicitud['fecha_inicio'] }}" class="form-control mb-2">
+<input type="date" name="fecha_fin" value="{{ solicitud['fecha_fin'] }}" class="form-control mb-2">
+<select name="completada" class="form-control mb-3">
+<option value="false" {% if not solicitud['completada'] %}selected{% endif %}>❌ No Completada</option>
+<option value="true" {% if solicitud['completada'] %}selected{% endif %}>✅ Completada</option>
+</select>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+<a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+</body></html>
+
+""", solicitud=solicitud, tareas=tareas, personas=personas)
+
+
+# ==============================
+
+# 🔹 ELIMINAR SOLICITUD
+
+# ==============================
+
+@solicitudes_bp.route("/eliminar_solicitud/<int:id_solicitud>")
+
+def eliminar_solicitud(id_solicitud):
+
+    try:
+
+        supabase.table("solicitudes").delete().eq("id_solicitud", id_solicitud).execute()
+
+        print(f"🗑️ Solicitud {id_solicitud} eliminada")
+
+    except Exception as e:
+
+        print("❌ Error eliminando solicitud:", e)
+
+    return redirect(url_for("solicitudes.ver_solicitudes"))
+ 
