@@ -1,12 +1,50 @@
 from flask import Blueprint, request, redirect, url_for, render_template_string
 
+from decimal import Decimal, InvalidOperation
+
 from db import supabase
 
 solicitudes_bp = Blueprint("solicitudes", __name__)
 
+# -----------------------
+
+# Helpers
+
+# -----------------------
+
+def safe_decimal(value, default=Decimal("0")):
+
+    if value is None or value == "":
+
+        return default
+
+    try:
+
+        return Decimal(str(value))
+
+    except (InvalidOperation, ValueError):
+
+        return default
+
+def parse_persona_id(val):
+
+    if val is None or val == "":
+
+        return None
+
+    # Try int first (common), otherwise return string (uuid)
+
+    try:
+
+        return int(val)
+
+    except Exception:
+
+        return val
+
 # ==============================
 
-# 🔹 VER SOLICITUDES
+# VER SOLICITUDES
 
 # ==============================
 
@@ -14,65 +52,37 @@ solicitudes_bp = Blueprint("solicitudes", __name__)
 
 def ver_solicitudes():
 
+    mensaje = request.args.get("msg", "")
+
     try:
 
         solicitudes_res = supabase.table("solicitudes").select("*").order("id_solicitud", desc=True).execute()
 
         solicitudes = solicitudes_res.data or []
 
+    except Exception as e:
+
+        print("❌ Error leyendo solicitudes:", e)
+
+        solicitudes = []
+
+    try:
+
         personas_res = supabase.table("personas").select("id, nombre").execute()
 
         personas = personas_res.data or []
 
-        personas_dict = {p["id"]: p["nombre"] for p in personas}
-
     except Exception as e:
 
-        print(f"❌ Error obteniendo datos: {e}")
+        print("❌ Error leyendo personas:", e)
 
-        solicitudes, personas_dict, personas = [], {}, []
+        personas = []
 
-    if not solicitudes:
+    # crear dicc id -> nombre
 
-        table_rows = "<tr><td colspan='11'>No hay datos disponibles</td></tr>"
+    personas_dict = {p["id"]: p["nombre"] for p in personas}
 
-    else:
-
-        table_rows = "".join(
-
-            f"<tr>"
-
-            f"<td>{row.get('tarea', '')}</td>"
-
-            f"<td>{row.get('url_nvs', '')}</td>"
-
-            f"<td>{row.get('peticion', '')}</td>"
-
-            f"<td>{row.get('id_moda', '')}</td>"
-
-            f"<td>{row.get('url_moda', '')}</td>"
-
-            f"<td>{row.get('horas_totales', '')}</td>"
-
-            f"<td>{row.get('fecha_inicio', '')}</td>"
-
-            f"<td>{row.get('fecha_fin', '')}</td>"
-
-            f"<td>{personas_dict.get(row.get('persona_id'), '—')}</td>"
-
-            f"<td>{'✅' if bool(row.get('completada')) else '❌'}</td>"
-
-            f"<td>"
-
-            f"<a href='{url_for('solicitudes.editar_solicitud', id_solicitud=row.get('id_solicitud'))}' class='btn btn-warning btn-sm'>✏️</a> "
-
-            f"<a href='{url_for('solicitudes.eliminar_solicitud', id_solicitud=row.get('id_solicitud'))}' class='btn btn-danger btn-sm' onclick='return confirm(\"¿Seguro que quieres eliminar esta solicitud?\")'>🗑️</a>"
-
-            f"</td></tr>"
-
-            for row in solicitudes
-
-        )
+    # Render con Jinja loop (más robusto)
 
     return render_template_string("""
 <html>
@@ -87,6 +97,11 @@ def ver_solicitudes():
 </nav>
 <div class="container mt-5">
 <h2 class="mb-4">Tabla de Solicitudes</h2>
+
+  {% if mensaje %}
+<div class="alert alert-info">{{ mensaje }}</div>
+
+  {% endif %}
 <form method="POST" action="{{ url_for('solicitudes.crear_solicitud') }}" class="mb-4">
 <div class="form-row">
 <div class="col"><input type="text" name="tarea" class="form-control" placeholder="Tarea" required></div>
@@ -103,10 +118,10 @@ def ver_solicitudes():
 <select name="persona_id" class="form-control" required>
 <option value="">Seleccione persona...</option>
 
-{% for p in personas %}
+          {% for p in personas %}
 <option value="{{ p['id'] }}">{{ p['nombre'] }}</option>
 
-{% endfor %}
+          {% endfor %}
 </select>
 </div>
 <div class="col">
@@ -128,7 +143,32 @@ def ver_solicitudes():
 </thead>
 <tbody>
 
-{{ table_rows|safe }}
+        {% if not solicitudes %}
+<tr><td colspan="11">No hay datos disponibles</td></tr>
+
+        {% else %}
+
+          {% for row in solicitudes %}
+<tr>
+<td>{{ row.get('tarea','') }}</td>
+<td>{{ row.get('url_nvs','') }}</td>
+<td>{{ row.get('peticion','') }}</td>
+<td>{{ row.get('id_moda','') }}</td>
+<td>{{ row.get('url_moda','') }}</td>
+<td>{{ row.get('horas_totales','') }}</td>
+<td>{{ row.get('fecha_inicio','') }}</td>
+<td>{{ row.get('fecha_fin','') }}</td>
+<td>{{ personas_dict.get(row.get('persona_id'), '—') }}</td>
+<td>{{ '✅' if row.get('completada') else '❌' }}</td>
+<td>
+<a href="{{ url_for('solicitudes.editar_solicitud', id_solicitud=row.get('id_solicitud')) }}" class="btn btn-warning btn-sm">✏️</a>
+<a href="{{ url_for('solicitudes.eliminar_solicitud', id_solicitud=row.get('id_solicitud')) }}" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que quieres eliminar esta solicitud?')">🗑️</a>
+</td>
+</tr>
+
+          {% endfor %}
+
+        {% endif %}
 </tbody>
 </table>
 </div>
@@ -136,11 +176,11 @@ def ver_solicitudes():
 </body>
 </html>
 
-""", table_rows=table_rows, personas=personas)
+""", solicitudes=solicitudes, personas=personas, personas_dict=personas_dict, mensaje=mensaje)
 
 # ==============================
 
-# 🔹 CREAR SOLICITUD
+# CREAR SOLICITUD
 
 # ==============================
 
@@ -148,48 +188,73 @@ def ver_solicitudes():
 
 def crear_solicitud():
 
+    tarea = request.form.get("tarea")
+
+    url_nvs = request.form.get("url_nvs")
+
+    peticion = request.form.get("peticion")
+
+    id_moda = request.form.get("id_moda")
+
+    url_moda = request.form.get("url_moda")
+
+    horas_totales = safe_decimal(request.form.get("horas_totales"))
+
+    fecha_inicio = request.form.get("fecha_inicio") or None
+
+    fecha_fin = request.form.get("fecha_fin") or None
+
+    persona_id = parse_persona_id(request.form.get("persona_id"))
+
+    completada = request.form.get("completada") == "true"
+
     data = {
 
-        "tarea": request.form.get("tarea"),
+        "tarea": tarea,
 
-        "url_nvs": request.form.get("url_nvs"),
+        "url_nvs": url_nvs,
 
-        "peticion": request.form.get("peticion"),
+        "peticion": peticion,
 
-        "id_moda": request.form.get("id_moda"),
+        "id_moda": id_moda,
 
-        "url_moda": request.form.get("url_moda"),
+        "url_moda": url_moda,
 
-        "horas_totales": float(request.form.get("horas_totales") or 0),
+        # supabase/python client puede requerir cast a float o a string según esquema;
 
-        "fecha_inicio": request.form.get("fecha_inicio"),
+        # enviamos como string decimal para evitar problemas con UUID/int mismatches
 
-        "fecha_fin": request.form.get("fecha_fin"),
+        "horas_totales": str(horas_totales) if horas_totales is not None else None,
 
-        "persona_id": int(request.form.get("persona_id")) if request.form.get("persona_id") else None,
+        "fecha_inicio": fecha_inicio,
 
-        "completada": request.form.get("completada") == "true"
+        "fecha_fin": fecha_fin,
+
+        "persona_id": persona_id,
+
+        "completada": completada
 
     }
 
     try:
 
-        supabase.table("solicitudes").insert(data).execute()
+        result = supabase.table("solicitudes").insert(data).execute()
 
-        print("✅ Solicitud creada correctamente:", data)
+        # result.data puede ser [] o devolver filas dependiendo del RLS/config
+
+        print("✅ Intento de insert:", data, "-> result:", result.data)
 
     except Exception as e:
 
         print("❌ Error al crear solicitud:", e)
 
-    return redirect(url_for("solicitudes.ver_solicitudes"))
- 
- 
+    # redirigir con mensaje simple (se muestra en /ver_solicitudes)
 
+    return redirect(url_for("solicitudes.ver_solicitudes", msg="Solicitud creada (revisa logs si no aparece)"))
 
 # ==============================
 
-# 🔹 EDITAR SOLICITUD
+# EDITAR SOLICITUD
 
 # ==============================
 
@@ -199,49 +264,75 @@ def editar_solicitud(id_solicitud):
 
     if request.method == "POST":
 
+        tarea = request.form.get("tarea")
+
+        url_nvs = request.form.get("url_nvs")
+
+        peticion = request.form.get("peticion")
+
+        id_moda = request.form.get("id_moda")
+
+        url_moda = request.form.get("url_moda")
+
+        horas_totales = safe_decimal(request.form.get("horas_totales"))
+
+        fecha_inicio = request.form.get("fecha_inicio") or None
+
+        fecha_fin = request.form.get("fecha_fin") or None
+
+        persona_id = parse_persona_id(request.form.get("persona_id"))
+
+        completada = request.form.get("completada") == "true"
+
         data = {
 
-            "tarea": request.form.get("tarea"),
+            "tarea": tarea,
 
-            "persona": request.form.get("persona"),
+            "url_nvs": url_nvs,
 
-            "url_nvs": request.form.get("url_nvs"),
+            "peticion": peticion,
 
-            "peticion": request.form.get("peticion"),
+            "id_moda": id_moda,
 
-            "id_moda": request.form.get("id_moda"),
+            "url_moda": url_moda,
 
-            "url_moda": request.form.get("url_moda"),
+            "horas_totales": str(horas_totales) if horas_totales is not None else None,
 
-            "horas_totales": float(request.form.get("horas_totales") or 0),
+            "fecha_inicio": fecha_inicio,
 
-            "fecha_inicio": request.form.get("fecha_inicio"),
+            "fecha_fin": fecha_fin,
 
-            "fecha_fin": request.form.get("fecha_fin"),
+            "persona_id": persona_id,
 
-            "completada": request.form.get("completada") == "true"
+            "completada": completada
 
         }
 
         try:
 
-            supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
+            result = supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
 
-            print(f"✏️ Solicitud {id_solicitud} actualizada")
+            print(f"✏️ Intento update id {id_solicitud} ->", result.data)
 
         except Exception as e:
 
             print("❌ Error actualizando solicitud:", e)
 
-        return redirect(url_for("solicitudes.ver_solicitudes"))
+        return redirect(url_for("solicitudes.ver_solicitudes", msg="Solicitud actualizada (revisa logs si no ves cambios)"))
+
+    # GET -> cargar solicitud y listas de personas
 
     response = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
 
     solicitud = response.data
 
-    tareas = [r["tarea"] for r in supabase.table("tareas").select("tarea").execute().data]
+    if not solicitud:
 
-    personas = [r["nombre"] for r in supabase.table("personas").select("nombre").execute().data]
+        return f"<h3>No se encontró la solicitud con ID {id_solicitud}</h3>"
+
+    personas_res = supabase.table("personas").select("id, nombre").execute()
+
+    personas = personas_res.data or []
 
     return render_template_string("""
 <html><head>
@@ -250,20 +341,7 @@ def editar_solicitud(id_solicitud):
 </head><body class="p-5">
 <h2>Editar Solicitud</h2>
 <form method="POST">
-<select name="tarea" class="form-control mb-2">
-
-{% for t in tareas %}
-<option value="{{ t }}" {% if t == solicitud['tarea'] %}selected{% endif %}>{{ t }}</option>
-
-{% endfor %}
-</select>
-<select name="persona" class="form-control mb-2">
-
-{% for p in personas %}
-<option value="{{ p }}" {% if p == solicitud['persona'] %}selected{% endif %}>{{ p }}</option>
-
-{% endfor %}
-</select>
+<input type="text" name="tarea" value="{{ solicitud['tarea'] }}" class="form-control mb-2" required>
 <input type="text" name="url_nvs" value="{{ solicitud['url_nvs'] }}" class="form-control mb-2">
 <input type="text" name="peticion" value="{{ solicitud['peticion'] }}" class="form-control mb-2">
 <input type="text" name="id_moda" value="{{ solicitud['id_moda'] }}" class="form-control mb-2">
@@ -271,6 +349,14 @@ def editar_solicitud(id_solicitud):
 <input type="number" step="0.1" name="horas_totales" value="{{ solicitud['horas_totales'] }}" class="form-control mb-2">
 <input type="date" name="fecha_inicio" value="{{ solicitud['fecha_inicio'] }}" class="form-control mb-2">
 <input type="date" name="fecha_fin" value="{{ solicitud['fecha_fin'] }}" class="form-control mb-2">
+<select name="persona_id" class="form-control mb-2" required>
+<option value="">Seleccione persona...</option>
+
+    {% for p in personas %}
+<option value="{{ p['id'] }}" {% if p['id'] == solicitud.get('persona_id') %}selected{% endif %}>{{ p['nombre'] }}</option>
+
+    {% endfor %}
+</select>
 <select name="completada" class="form-control mb-3">
 <option value="false" {% if not solicitud['completada'] %}selected{% endif %}>❌ No Completada</option>
 <option value="true" {% if solicitud['completada'] %}selected{% endif %}>✅ Completada</option>
@@ -280,12 +366,11 @@ def editar_solicitud(id_solicitud):
 </form>
 </body></html>
 
-""", solicitud=solicitud, tareas=tareas, personas=personas)
-
+""", solicitud=solicitud, personas=personas)
 
 # ==============================
 
-# 🔹 ELIMINAR SOLICITUD
+# ELIMINAR SOLICITUD
 
 # ==============================
 
@@ -303,5 +388,5 @@ def eliminar_solicitud(id_solicitud):
 
         print("❌ Error eliminando solicitud:", e)
 
-    return redirect(url_for("solicitudes.ver_solicitudes"))
+    return redirect(url_for("solicitudes.ver_solicitudes", msg="Solicitud eliminada"))
  
