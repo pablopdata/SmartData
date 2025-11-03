@@ -1,181 +1,170 @@
-# solicitudes.py
-
 from flask import Blueprint, request, redirect, url_for, render_template_string
-
-from decimal import Decimal, InvalidOperation
 
 from db import supabase
 
 solicitudes_bp = Blueprint("solicitudes", __name__)
 
-# ---------------- Helpers ----------------
+# ==============================
 
-def safe_decimal(value):
+# 🔹 VER SOLICITUDES
 
-    if value is None or value == "":
-
-        return None
-
-    try:
-
-        return Decimal(str(value))
-
-    except (InvalidOperation, ValueError):
-
-        return None
-
-def parse_persona_id(val):
-
-    if val is None or val == "":
-
-        return None
-
-    try:
-
-        return int(val)
-
-    except Exception:
-
-        return val  # podría ser UUID (string)
-
-# ---------------- Ver (lista) con búsqueda y paginación ----------------
+# ==============================
 
 @solicitudes_bp.route("/ver_solicitudes")
 
 def ver_solicitudes():
 
-    search = request.args.get("search", "").strip().lower()
-
-    page = int(request.args.get("page", 1))
-
-    per_page = int(request.args.get("per_page", 10))
-
-    # Traer datos
-
     try:
 
-        solicitudes_all = supabase.table("solicitudes").select("*").order("id_solicitud", desc=True).execute().data or []
+        # Obtener solicitudes y personas
+
+        solicitudes_res = supabase.table("solicitudes").select("*").order("id_solicitud", desc=True).execute()
+
+        solicitudes = solicitudes_res.data or []
+
+        personas_res = supabase.table("personas").select("id, nombre").execute()
+
+        personas = personas_res.data or []
+
+        # Crear diccionario id_persona → nombre
+
+        personas_dict = {p["id"]: p["nombre"] for p in personas}
 
     except Exception as e:
 
-        print("❌ Error leyendo solicitudes:", e)
+        print(f"❌ Error obteniendo datos: {e}")
 
-        solicitudes_all = []
+        solicitudes, personas_dict = [], {}
 
-    try:
+    # Generar filas de la tabla
 
-        personas_all = supabase.table("personas").select("id, nombre").execute().data or []
+    if not solicitudes:
 
-    except Exception as e:
-
-        print("❌ Error leyendo personas:", e)
-
-        personas_all = []
-
-    personas_dict = {p["id"]: p["nombre"] for p in personas_all}
-
-    # Filtrado por búsqueda (en varios campos)
-
-    if search:
-
-        def match(s):
-
-            fields = [
-
-                s.get("tarea", ""),
-
-                s.get("url_nvs", ""),
-
-                s.get("peticion", ""),
-
-                s.get("id_moda", ""),
-
-                s.get("url_moda", ""),
-
-                str(s.get("horas_totales", "")),
-
-                s.get("fecha_inicio", "") or "",
-
-                s.get("fecha_fin", "") or "",
-
-                personas_dict.get(s.get("persona_id"), "")
-
-            ]
-
-            combined = " | ".join([str(f).lower() for f in fields])
-
-            return search in combined
-
-        solicitudes_filtered = [s for s in solicitudes_all if match(s)]
+        table_rows = "<tr><td colspan='10'>No hay datos disponibles</td></tr>"
 
     else:
 
-        solicitudes_filtered = solicitudes_all
+        table_rows = "".join(
 
-    # Paginación
+            f"<tr>"
 
-    total = len(solicitudes_filtered)
+            f"<td>"
 
-    total_pages = max(1, (total + per_page - 1) // per_page)
+            + (
 
-    if page < 1: page = 1
+                f"<a href='{row.get('url_nvs', '')}' target='_blank'>{row.get('tarea', '')}</a>"
 
-    if page > total_pages: page = total_pages
+                if row.get('url_nvs')
 
-    start = (page - 1) * per_page
+                else f"{row.get('tarea', '')}"
 
-    end = start + per_page
+            )
 
-    solicitudes_page = solicitudes_filtered[start:end]
+            + "</td>"
 
-    # Template compacto con buscador, paginación y tabla
+            f"<td>{row.get('peticion', '')}</td>"
+
+            f"<td>{row.get('id_moda', '')}</td>"
+
+            f"<td>{row.get('url_moda', '')}</td>"
+
+            f"<td>{row.get('horas_totales', '')}</td>"
+
+            f"<td>{row.get('fecha_inicio', '')}</td>"
+
+            f"<td>{row.get('fecha_fin', '')}</td>"
+
+            f"<td>{personas_dict.get(row.get('persona_id'), '—')}</td>"
+
+            f"<td>{'✅' if bool(row.get('completada')) else '❌'}</td>"
+
+            f"<td>"
+
+            f"<a href='{url_for('solicitudes.editar_solicitud', id_solicitud=row.get('id_solicitud'))}' "
+
+            f"class='btn btn-warning btn-sm'>✏️</a> "
+
+            f"<a href='{url_for('solicitudes.eliminar_solicitud', id_solicitud=row.get('id_solicitud'))}' "
+
+            f"class='btn btn-danger btn-sm' onclick='return confirm(\"¿Seguro que quieres eliminar esta solicitud?\")'>🗑️</a>"
+
+            f"</td></tr>"
+
+            for row in solicitudes
+
+        )
+
+    # Renderizar plantilla HTML con DataTables
 
     return render_template_string("""
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-<meta charset="utf-8">
-<title>Solicitudes</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Gestión de Solicitudes</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
 <style>
 
-    body { background:#f7f7f8; padding:18px; }
+    body { background-color: #f4f6f8; }
 
-    .card { padding:12px; }
+    table { font-size: 13px; }  /* 🔹 columnas más pequeñas */
 
-    .table th, .table td { font-size:0.78rem; padding:6px 8px; white-space:nowrap; text-align:center; }
+    th, td { white-space: nowrap; text-align: center; vertical-align: middle; }
 
-    .table { min-width:1200px; }
+    .btn-sm { padding: 2px 5px; font-size: 12px; }
 
-    .table-responsive { overflow-x:auto; }
-
-    .btn-sm { padding:3px 6px; font-size:0.75rem; }
-
-    .search-bar { gap:8px; display:flex; justify-content:center; margin-bottom:12px; }
+    .table-responsive { max-height: 70vh; overflow-y: auto; }
 </style>
 </head>
 <body>
-<div class="container">
-<div class="card">
-<h4 class="mb-3 text-center">📋 Lista de Solicitudes</h4>
-<form method="get" class="search-bar mb-2">
-<input type="text" name="search" value="{{ search }}" class="form-control w-50" placeholder="Buscar por tarea, persona, id_moda, etc.">
-<select name="per_page" class="form-control" style="max-width:110px;">
-<option value="10" {% if per_page==10 %}selected{% endif %}>10</option>
-<option value="25" {% if per_page==25 %}selected{% endif %}>25</option>
-<option value="50" {% if per_page==50 %}selected{% endif %}>50</option>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
+<span class="navbar-text ml-3 text-white">Gestión de Solicitudes</span>
+</nav>
+<div class="container mt-5">
+<h2 class="mb-4">Tabla de Solicitudes</h2>
+<!-- Formulario de creación -->
+<form method="POST" action="{{ url_for('solicitudes.crear_solicitud') }}" class="mb-4">
+<div class="form-row">
+<div class="col"><input type="text" name="tarea" class="form-control" placeholder="Tarea" required></div>
+<div class="col"><input type="text" name="url_nvs" class="form-control" placeholder="URL NVS"></div>
+<div class="col"><input type="text" name="peticion" class="form-control" placeholder="Petición"></div>
+<div class="col"><input type="text" name="id_moda" class="form-control" placeholder="ID Moda"></div>
+<div class="col"><input type="text" name="url_moda" class="form-control" placeholder="URL Moda"></div>
+</div>
+<div class="form-row mt-2">
+<div class="col"><input type="number" step="0.1" name="horas_totales" class="form-control" placeholder="Horas Totales"></div>
+<div class="col"><input type="date" name="fecha_inicio" class="form-control"></div>
+<div class="col"><input type="date" name="fecha_fin" class="form-control"></div>
+<div class="col">
+<select name="persona_id" class="form-control" required>
+<option value="">Seleccione persona...</option>
+
+          {% for p in personas %}
+<option value="{{ p['id'] }}">{{ p['nombre'] }}</option>
+
+          {% endfor %}
 </select>
-<button class="btn btn-success" type="submit">Buscar</button>
-<a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-secondary">Reset</a>
-<a href="{{ url_for('solicitudes.crear_solicitud') }}" class="btn btn-primary">➕ Nueva</a>
+</div>
+<div class="col">
+<select name="completada" class="form-control">
+<option value="false">❌ No Completada</option>
+<option value="true">✅ Completada</option>
+</select>
+</div>
+<div class="col"><button type="submit" class="btn btn-success btn-block">➕ Añadir</button></div>
+</div>
 </form>
+<!-- Tabla -->
 <div class="table-responsive">
-<table class="table table-striped table-bordered">
-<thead class="table-dark">
+<table id="solicitudesTable" class="table table-striped table-bordered table-hover">
+<thead class="thead-dark">
 <tr>
-<th>ID</th>
 <th>Tarea</th>
-<th>URL NVS</th>
 <th>Petición</th>
 <th>ID Moda</th>
 <th>URL Moda</th>
@@ -189,182 +178,85 @@ def ver_solicitudes():
 </thead>
 <tbody>
 
-            {% if not solicitudes %}
-<tr><td colspan="12">No hay datos</td></tr>
-
-            {% else %}
-
-              {% for s in solicitudes %}
-<tr>
-<td>{{ s.get('id_solicitud') }}</td>
-<td>{{ s.get('tarea','') }}</td>
-<td>{{ s.get('url_nvs','') }}</td>
-<td>{{ s.get('peticion','') }}</td>
-<td>{{ s.get('id_moda','') }}</td>
-<td>{{ s.get('url_moda','') }}</td>
-<td>{{ s.get('horas_totales','') }}</td>
-<td>{{ s.get('fecha_inicio','') }}</td>
-<td>{{ s.get('fecha_fin','') }}</td>
-<td>{{ personas.get(s.get('persona_id'), '—') }}</td>
-<td>{{ '✅' if s.get('completada') else '❌' }}</td>
-<td>
-<a href="{{ url_for('solicitudes.editar_solicitud', id_solicitud=s.get('id_solicitud')) }}" class="btn btn-warning btn-sm">✏️</a>
-<a href="{{ url_for('solicitudes.eliminar_solicitud', id_solicitud=s.get('id_solicitud')) }}" class="btn btn-danger btn-sm" onclick="return confirm('Eliminar?')">🗑️</a>
-</td>
-</tr>
-
-              {% endfor %}
-
-            {% endif %}
+        {{ table_rows|safe }}
 </tbody>
 </table>
 </div>
-<!-- Paginación -->
-<nav class="mt-2">
-<ul class="pagination justify-content-center">
-
-          {% if page > 1 %}
-<li class="page-item">
-<a class="page-link" href="{{ url_for('solicitudes.ver_solicitudes', page=page-1, per_page=per_page, search=search) }}">« Anterior</a>
-</li>
-
-          {% endif %}
-<li class="page-item disabled"><span class="page-link">Página {{ page }} / {{ total_pages }}</span></li>
-
-          {% if page < total_pages %}
-<li class="page-item">
-<a class="page-link" href="{{ url_for('solicitudes.ver_solicitudes', page=page+1, per_page=per_page, search=search) }}">Siguiente »</a>
-</li>
-
-          {% endif %}
-</ul>
-</nav>
 </div>
-</div>
+<script>
+
+$(document).ready(function() {
+
+  $('#solicitudesTable').DataTable({
+
+    "pageLength": 10,
+
+    "language": {
+
+      "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+
+    }
+
+  });
+
+});
+</script>
 </body>
 </html>
 
-    """,
+""", table_rows=table_rows, personas=personas)
 
-    solicitudes=solicitudes_page,
+# ==============================
 
-    personas=personas_dict,
+# 🔹 CREAR SOLICITUD
 
-    search=search,
+# ==============================
 
-    page=page,
-
-    per_page=per_page,
-
-    total_pages=total_pages)
-
-# ---------------- Crear ----------------
-
-@solicitudes_bp.route("/crear_solicitud", methods=["GET", "POST"])
+@solicitudes_bp.route("/crear_solicitud", methods=["POST"])
 
 def crear_solicitud():
 
-    if request.method == "POST":
+    data = {
 
-        tarea = request.form.get("tarea")
+        "tarea": request.form.get("tarea"),
 
-        url_nvs = request.form.get("url_nvs")
+        "url_nvs": request.form.get("url_nvs"),
 
-        peticion = request.form.get("peticion")
+        "peticion": request.form.get("peticion"),
 
-        id_moda = request.form.get("id_moda")
+        "id_moda": request.form.get("id_moda"),
 
-        url_moda = request.form.get("url_moda")
+        "url_moda": request.form.get("url_moda"),
 
-        horas_totales = safe_decimal(request.form.get("horas_totales"))
+        "horas_totales": float(request.form.get("horas_totales") or 0),
 
-        fecha_inicio = request.form.get("fecha_inicio") or None
+        "fecha_inicio": request.form.get("fecha_inicio"),
 
-        fecha_fin = request.form.get("fecha_fin") or None
+        "fecha_fin": request.form.get("fecha_fin"),
 
-        persona_id = parse_persona_id(request.form.get("persona_id"))
+        "persona_id": request.form.get("persona_id"),
 
-        completada = request.form.get("completada") == "true" or request.form.get("completada") == "on"
+        "completada": request.form.get("completada") == "true"
 
-        data = {
+    }
 
-            "tarea": tarea,
+    try:
 
-            "url_nvs": url_nvs,
+        supabase.table("solicitudes").insert(data).execute()
 
-            "peticion": peticion,
+        print("✅ Solicitud creada correctamente:", data)
 
-            "id_moda": id_moda,
+    except Exception as e:
 
-            "url_moda": url_moda,
+        print("❌ Error al crear solicitud:", e)
 
-            "horas_totales": str(horas_totales) if horas_totales is not None else None,
+    return redirect(url_for("solicitudes.ver_solicitudes"))
 
-            "fecha_inicio": fecha_inicio,
+# ==============================
 
-            "fecha_fin": fecha_fin,
+# 🔹 EDITAR SOLICITUD
 
-            "persona_id": persona_id,
-
-            "completada": completada
-
-        }
-
-        try:
-
-            res = supabase.table("solicitudes").insert(data).execute()
-
-            print("INSERT result:", res.data)
-
-        except Exception as e:
-
-            print("❌ Error insert:", e)
-
-        return redirect(url_for("solicitudes.ver_solicitudes"))
-
-    # GET -> mostrar formulario
-
-    personas = supabase.table("personas").select("id, nombre").execute().data or []
-
-    return render_template_string("""
-<html><head>
-<meta charset="utf-8"><title>Nueva solicitud</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head><body class="p-4">
-<div class="container">
-<h4>➕ Nueva solicitud</h4>
-<form method="post">
-<div class="mb-2"><input class="form-control" name="tarea" placeholder="Tarea" required></div>
-<div class="mb-2"><input class="form-control" name="url_nvs" placeholder="URL NVS"></div>
-<div class="mb-2"><input class="form-control" name="peticion" placeholder="Petición"></div>
-<div class="mb-2"><input class="form-control" name="id_moda" placeholder="ID Moda"></div>
-<div class="mb-2"><input class="form-control" name="url_moda" placeholder="URL Moda"></div>
-<div class="mb-2"><input class="form-control" name="horas_totales" placeholder="Horas totales"></div>
-<div class="mb-2"><input type="date" class="form-control" name="fecha_inicio"></div>
-<div class="mb-2"><input type="date" class="form-control" name="fecha_fin"></div>
-<div class="mb-2">
-<select name="persona_id" class="form-control" required>
-<option value="">Seleccione persona...</option>
-
-          {% for p in personas %}
-<option value="{{ p['id'] }}">{{ p['nombre'] }}</option>
-
-          {% endfor %}
-</select>
-</div>
-<div class="form-check mb-3">
-<input class="form-check-input" type="checkbox" id="completada" name="completada">
-<label for="completada" class="form-check-label">Completada</label>
-</div>
-<button class="btn btn-primary" type="submit">Guardar</button>
-<a class="btn btn-secondary" href="{{ url_for('solicitudes.ver_solicitudes') }}">Cancelar</a>
-</form>
-</div>
-</body></html>
-
-    """, personas=personas)
-
-# ---------------- Editar ----------------
+# ==============================
 
 @solicitudes_bp.route("/editar_solicitud/<int:id_solicitud>", methods=["GET", "POST"])
 
@@ -372,113 +264,86 @@ def editar_solicitud(id_solicitud):
 
     if request.method == "POST":
 
-        tarea = request.form.get("tarea")
-
-        url_nvs = request.form.get("url_nvs")
-
-        peticion = request.form.get("peticion")
-
-        id_moda = request.form.get("id_moda")
-
-        url_moda = request.form.get("url_moda")
-
-        horas_totales = safe_decimal(request.form.get("horas_totales"))
-
-        fecha_inicio = request.form.get("fecha_inicio") or None
-
-        fecha_fin = request.form.get("fecha_fin") or None
-
-        persona_id = parse_persona_id(request.form.get("persona_id"))
-
-        completada = request.form.get("completada") == "true" or request.form.get("completada") == "on"
-
         data = {
 
-            "tarea": tarea,
+            "tarea": request.form.get("tarea"),
 
-            "url_nvs": url_nvs,
+            "persona_id": request.form.get("persona_id"),
 
-            "peticion": peticion,
+            "url_nvs": request.form.get("url_nvs"),
 
-            "id_moda": id_moda,
+            "peticion": request.form.get("peticion"),
 
-            "url_moda": url_moda,
+            "id_moda": request.form.get("id_moda"),
 
-            "horas_totales": str(horas_totales) if horas_totales is not None else None,
+            "url_moda": request.form.get("url_moda"),
 
-            "fecha_inicio": fecha_inicio,
+            "horas_totales": float(request.form.get("horas_totales") or 0),
 
-            "fecha_fin": fecha_fin,
+            "fecha_inicio": request.form.get("fecha_inicio"),
 
-            "persona_id": persona_id,
+            "fecha_fin": request.form.get("fecha_fin"),
 
-            "completada": completada
+            "completada": request.form.get("completada") == "true"
 
         }
 
         try:
 
-            res = supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
+            supabase.table("solicitudes").update(data).eq("id_solicitud", id_solicitud).execute()
 
-            print("UPDATE result:", res.data)
+            print(f"✏️ Solicitud {id_solicitud} actualizada")
 
         except Exception as e:
 
-            print("❌ Error update:", e)
+            print("❌ Error actualizando solicitud:", e)
 
         return redirect(url_for("solicitudes.ver_solicitudes"))
 
-    # GET -> cargar solicitud y formulario
+    response = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
 
-    resp = supabase.table("solicitudes").select("*").eq("id_solicitud", id_solicitud).single().execute()
+    solicitud = response.data
 
-    solicitud = resp.data
-
-    if not solicitud:
-
-        return f"<h3>No encontrada id {id_solicitud}</h3>"
-
-    personas = supabase.table("personas").select("id, nombre").execute().data or []
+    personas = supabase.table("personas").select("id, nombre").execute().data
 
     return render_template_string("""
 <html><head>
-<meta charset="utf-8"><title>Editar solicitud</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head><body class="p-4">
-<div class="container">
-<h4>✏️ Editar solicitud {{ solicitud['id_solicitud'] }}</h4>
-<form method="post">
-<div class="mb-2"><input class="form-control" name="tarea" value="{{ solicitud['tarea'] }}"></div>
-<div class="mb-2"><input class="form-control" name="url_nvs" value="{{ solicitud['url_nvs'] }}"></div>
-<div class="mb-2"><input class="form-control" name="peticion" value="{{ solicitud['peticion'] }}"></div>
-<div class="mb-2"><input class="form-control" name="id_moda" value="{{ solicitud['id_moda'] }}"></div>
-<div class="mb-2"><input class="form-control" name="url_moda" value="{{ solicitud['url_moda'] }}"></div>
-<div class="mb-2"><input class="form-control" name="horas_totales" value="{{ solicitud['horas_totales'] }}"></div>
-<div class="mb-2"><input type="date" class="form-control" name="fecha_inicio" value="{{ solicitud['fecha_inicio'] }}"></div>
-<div class="mb-2"><input type="date" class="form-control" name="fecha_fin" value="{{ solicitud['fecha_fin'] }}"></div>
-<div class="mb-2">
-<select name="persona_id" class="form-control" required>
-<option value="">Seleccione persona...</option>
+<title>Editar Solicitud</title>
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head><body class="p-5">
+<h2>Editar Solicitud</h2>
+<form method="POST">
+<input type="text" name="tarea" value="{{ solicitud['tarea'] }}" class="form-control mb-2">
+<input type="text" name="url_nvs" value="{{ solicitud['url_nvs'] }}" class="form-control mb-2">
+<input type="text" name="peticion" value="{{ solicitud['peticion'] }}" class="form-control mb-2">
+<input type="text" name="id_moda" value="{{ solicitud['id_moda'] }}" class="form-control mb-2">
+<input type="text" name="url_moda" value="{{ solicitud['url_moda'] }}" class="form-control mb-2">
+<input type="number" step="0.1" name="horas_totales" value="{{ solicitud['horas_totales'] }}" class="form-control mb-2">
+<input type="date" name="fecha_inicio" value="{{ solicitud['fecha_inicio'] }}" class="form-control mb-2">
+<input type="date" name="fecha_fin" value="{{ solicitud['fecha_fin'] }}" class="form-control mb-2">
+<select name="persona_id" class="form-control mb-2">
 
-          {% for p in personas %}
-<option value="{{ p['id'] }}" {% if p['id'] == solicitud.get('persona_id') %}selected{% endif %}>{{ p['nombre'] }}</option>
+  {% for p in personas %}
+<option value="{{ p['id'] }}" {% if p['id'] == solicitud['persona_id'] %}selected{% endif %}>{{ p['nombre'] }}</option>
 
-          {% endfor %}
+  {% endfor %}
 </select>
-</div>
-<div class="form-check mb-3">
-<input class="form-check-input" type="checkbox" id="completada" name="completada" {% if solicitud.get('completada') %}checked{% endif %}>
-<label for="completada" class="form-check-label">Completada</label>
-</div>
-<button class="btn btn-primary" type="submit">Guardar</button>
-<a class="btn btn-secondary" href="{{ url_for('solicitudes.ver_solicitudes') }}">Cancelar</a>
+<select name="completada" class="form-control mb-3">
+<option value="false" {% if not solicitud['completada'] %}selected{% endif %}>❌ No Completada</option>
+<option value="true" {% if solicitud['completada'] %}selected{% endif %}>✅ Completada</option>
+</select>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+<a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-secondary">Cancelar</a>
 </form>
-</div>
 </body></html>
 
-    """, solicitud=solicitud, personas=personas)
+""", solicitud=solicitud, personas=personas)
 
-# ---------------- Eliminar ----------------
+# ==============================
+
+# 🔹 ELIMINAR SOLICITUD
+
+# ==============================
 
 @solicitudes_bp.route("/eliminar_solicitud/<int:id_solicitud>")
 
@@ -486,13 +351,13 @@ def eliminar_solicitud(id_solicitud):
 
     try:
 
-        res = supabase.table("solicitudes").delete().eq("id_solicitud", id_solicitud).execute()
+        supabase.table("solicitudes").delete().eq("id_solicitud", id_solicitud).execute()
 
-        print("DELETE result:", res.data)
+        print(f"🗑️ Solicitud {id_solicitud} eliminada")
 
     except Exception as e:
 
-        print("❌ Error delete:", e)
+        print("❌ Error eliminando solicitud:", e)
 
     return redirect(url_for("solicitudes.ver_solicitudes"))
  
