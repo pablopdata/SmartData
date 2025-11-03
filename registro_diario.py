@@ -4,43 +4,60 @@ from db import supabase
 
 registro_bp = Blueprint("registro", __name__)
 
-# 🔹 Mostrar tabla de registro diario
+# 🔹 Mostrar tabla
 
 @registro_bp.route("/ver_tabla")
+
 def ver_tabla():
+
     try:
+
         response = supabase.table("registro_diario").select("*").order("fecha", desc=True).execute()
-        data = response.data
+
+        data = response.data or []
+
     except Exception as e:
+
         print(f"❌ Error obteniendo datos: {e}")
+
         data = []
 
     try:
-        solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
-        solicitudes = [row["solicitud"] for row in solicitudes_response.data]
-    except Exception as e:
-        print(f"❌ Error obteniendo solicitudes: {e}")
+
+        solicitudes = [r["solicitud"] for r in supabase.table("solicitudes").select("solicitud").eq("completada", False).execute().data]
+
+    except Exception:
+
         solicitudes = []
 
-    
     try:
-        personas_response = supabase.table("personas").select("nombre").execute()
-        personas = [row["nombre"] for row in personas_response.data]
-    except Exception as e:
-        print(f"❌ Error obteniendo personas: {e}")
+
+        personas = [r["nombre"] for r in supabase.table("personas").select("nombre").execute().data]
+
+    except Exception:
+
         personas = []
-  
 
     table_rows = "".join(
+
         f"<tr>"
+
         f"<td>{row.get('fecha','')}</td><td>{row.get('solicitud','')}</td><td>{row.get('persona','')}</td>"
+
         f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
+
         f"<td>{row.get('porcentaje_real','')}</td><td>{row.get('porcentaje_nvs','')}</td>"
+
         f"<td>"
+
         f"<a href='{url_for('registro.editar_registro', registro_id=row.get('id'))}' class='btn btn-warning btn-sm'>✏️</a> "
+
         f"<a href='{url_for('registro.eliminar_registro', registro_id=row.get('id'))}' class='btn btn-danger btn-sm'>🗑️</a>"
+
         f"</td></tr>"
+
         for row in data
+
     ) if data else "<tr><td colspan='8'>No hay datos disponibles</td></tr>"
 
     return render_template_string("""
@@ -51,7 +68,7 @@ def ver_tabla():
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
+<a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
 </nav>
 <div class="container mt-5">
 <h2>Tabla Imputaciones</h2>
@@ -59,31 +76,35 @@ def ver_tabla():
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
 <div class="col">
-    <select name="solicitud" class="form-control">
+<select name="solicitud" class="form-control">
+
         {% for opcion in solicitudes %}
-            <option value="{{ opcion }}">{{ opcion }}</option>
-        {% endfor %}
-    </select>
-</div>
+<option value="{{ opcion }}">{{ opcion }}</option>
 
+        {% endfor %}
+</select>
+</div>
 <div class="col">
-    <select name="persona" class="form-control">
-        {% for persona in personas %}
-            <option value="{{ persona }}">{{ persona }}</option>
-        {% endfor %}
-    </select>
-</div>
+<select name="persona" class="form-control">
 
+        {% for persona in personas %}
+<option value="{{ persona }}">{{ persona }}</option>
+
+        {% endfor %}
+</select>
+</div>
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
-<div class="col"><input type="text" step="0.1" name="peticion" placeholder="Petición" class="form-control" required></div>
+<div class="col"><input type="text" name="peticion" placeholder="Petición" class="form-control" required></div>
 <div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
 <div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
 </div></form>
 <table class="table table-striped table-bordered"><thead class="thead-dark">
-<tr><th>Fecha</th><th>solicitud</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
+<tr><th>Fecha</th><th>Solicitud</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
 </thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
+
 """, table_rows=table_rows, solicitudes=solicitudes, personas=personas)
+
 
 # 🔹 Crear nuevo registro
 
@@ -91,36 +112,7 @@ def ver_tabla():
 
 def crear_registro():
 
-    data = {
-
-        "fecha": request.form.get("fecha"),
-
-        "solicitud": request.form.get("solicitud"),
-
-        "persona": request.form.get("persona"),
-
-        "horas": float(request.form.get("horas")),
-
-        "peticion": request.form.get("peticion"),
-
-        "porcentaje_real": request.form.get("porcentaje_real"),
-
-        "porcentaje_nvs": request.form.get("porcentaje_nvs")
-
-    }
-
-    supabase.table("registro_diario").insert(data).execute()
-    
-
-    return redirect(url_for("registro.ver_tabla"))
-
-# 🔹 Editar registro existente
-
-@registro_bp.route("/editar_registro/<int:registro_id>", methods=["GET", "POST"])
-
-def editar_registro(registro_id):
-
-    if request.method == "POST":
+    try:
 
         data = {
 
@@ -130,29 +122,68 @@ def editar_registro(registro_id):
 
             "persona": request.form.get("persona"),
 
-            "horas": float(request.form.get("horas")),
+            "horas": float(request.form.get("horas") or 0),
 
             "peticion": request.form.get("peticion"),
 
-            "porcentaje_real": request.form.get("porcentaje_real"),
+            "porcentaje_real": float(request.form.get("porcentaje_real") or 0),
 
-            "porcentaje_nvs": request.form.get("porcentaje_nvs")
+            "porcentaje_nvs": float(request.form.get("porcentaje_nvs") or 0)
 
         }
 
-        supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
+        supabase.table("registro_diario").insert(data).execute()
+
+    except Exception as e:
+
+        print(f"❌ Error insertando registro: {e}")
+
+    return redirect(url_for("registro.ver_tabla"))
+
+
+# 🔹 Editar registro existente
+
+@registro_bp.route("/editar_registro/<int:registro_id>", methods=["GET", "POST"])
+
+def editar_registro(registro_id):
+
+    if request.method == "POST":
+
+        try:
+
+            data = {
+
+                "fecha": request.form.get("fecha"),
+
+                "solicitud": request.form.get("solicitud"),
+
+                "persona": request.form.get("persona"),
+
+                "horas": float(request.form.get("horas") or 0),
+
+                "peticion": request.form.get("peticion"),
+
+                "porcentaje_real": float(request.form.get("porcentaje_real") or 0),
+
+                "porcentaje_nvs": float(request.form.get("porcentaje_nvs") or 0)
+
+            }
+
+            supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
+
+        except Exception as e:
+
+            print(f"❌ Error actualizando registro: {e}")
 
         return redirect(url_for("registro.ver_tabla"))
 
-    registro = supabase.table("registro_diario").select("*").eq("id", registro_id).single().execute().data
+    response = supabase.table("registro_diario").select("*").eq("id", registro_id).execute()
 
-    
-    solicitudes_response = supabase.table("solicitudes").select("solicitud").eq("completada", False).execute()
-    solicitudes = [row["solicitud"] for row in solicitudes_response.data]
+    registro = response.data[0] if response.data else {}
 
-    personas_response = supabase.table("personas").select("nombre").execute()
-    personas = [row["nombre"] for row in personas_response.data]
+    solicitudes = [r["solicitud"] for r in supabase.table("solicitudes").select("solicitud").eq("completada", False).execute().data]
 
+    personas = [r["nombre"] for r in supabase.table("personas").select("nombre").execute().data]
 
     return render_template_string("""
 <html>
@@ -163,20 +194,20 @@ def editar_registro(registro_id):
 <h2>Editar Registro Diario</h2>
 <form method="POST">
 <input type="date" name="fecha" value="{{ registro['fecha'] }}" class="form-control mb-2" required>
-<div class="col">
-    <select name="solicitud" class="form-control">
-        {% for opcion in solicitudes %}
-            <option value="{{ opcion }}">{{ opcion }}</option>
-        {% endfor %}
-    </select>
-</div>
-<div class="col">
-    <select name="persona" class="form-control">
-        {% for persona in personas %}
-            <option value="{{ persona }}">{{ persona }}</option>
-        {% endfor %}
-    </select>
-</div>
+<select name="solicitud" class="form-control mb-2">
+
+{% for opcion in solicitudes %}
+<option value="{{ opcion }}" {% if opcion == registro['solicitud'] %}selected{% endif %}>{{ opcion }}</option>
+
+{% endfor %}
+</select>
+<select name="persona" class="form-control mb-2">
+
+{% for persona in personas %}
+<option value="{{ persona }}" {% if persona == registro['persona'] %}selected{% endif %}>{{ persona }}</option>
+
+{% endfor %}
+</select>
 <input type="number" step="0.1" name="horas" value="{{ registro['horas'] }}" class="form-control mb-2" required>
 <input type="text" name="peticion" value="{{ registro['peticion'] }}" class="form-control mb-2">
 <input type="number" name="porcentaje_real" value="{{ registro['porcentaje_real'] }}" class="form-control mb-2">
@@ -186,7 +217,8 @@ def editar_registro(registro_id):
 </form>
 </body></html>
 
-""", registro=registro)
+""", registro=registro, solicitudes=solicitudes, personas=personas)
+
 
 # 🔹 Eliminar registro
 
@@ -194,7 +226,13 @@ def editar_registro(registro_id):
 
 def eliminar_registro(registro_id):
 
-    supabase.table("registro_diario").delete().eq("id", registro_id).execute()
+    try:
+
+        supabase.table("registro_diario").delete().eq("id", registro_id).execute()
+
+    except Exception as e:
+
+        print(f"❌ Error eliminando registro: {e}")
 
     return redirect(url_for("registro.ver_tabla"))
  
