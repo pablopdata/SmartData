@@ -53,115 +53,45 @@ def ver_peticiones():
         )
 
     return render_template_string("""
-<!doctype html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Peticiones • SmartData</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background: #f5f7fb; }
-    .hero { background: linear-gradient(90deg,#4f46e5 0%,#06b6d4 100%); color: white; }
-    .card-table { box-shadow: 0 6px 18px rgba(15,23,42,0.08); }
-    .table td, .table th { vertical-align: middle; }
-    .brand-back { text-decoration: none; color: rgba(255,255,255,0.9); }
-    @media (max-width:576px){ .actions-col { width: 1px; white-space: nowrap; } }
-  </style>
+    <title>Peticiones</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2ap.min.css
 </head>
 <body>
-  <nav class="navbar navbar-dark hero">
-    <div class="container">
-      <a class="brand-back d-flex align-items-center" href="{{ url_for('index') }}">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
-          <path fill-rule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H3.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L3.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
-        </svg>
-        <span class="ms-2 fw-semibold">Volver</span>
-      </a>
-      <div class="text-end">
-        <h5 class="mb-0">Gestión de Peticiones</h5>
-        <small class="opacity-75">Administra, edita y elimina peticiones</small>
-      </div>
-    </div>
-  </nav>
-
-  <main class="container my-5">
-    <div class="row g-4">
-      <div class="col-12">
-        <div class="card p-3 card-table">
-          <div class="d-flex align-items-center justify-content-between mb-3 gap-2 flex-wrap">
-            <div>
-              <h4 class="mb-0">Peticiones</h4>
-              <small class="text-muted">Lista ordenada por fecha (más recientes arriba)</small>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        {{ url_for(← Volver</a>
+        <span class="navbar-text ml-3 text-white">Gestión de Peticiones</span>
+    </nav>
+    <div class="container mt-5">
+        <h2 class="mb-4">Tabla de Peticiones</h2>
+        {{ url_for(
+            <div class="form-row">
+                <div class="col">
+                    <input type="text" name="nombre_peticion" class="form-control" placeholder="Nombre de la Petición" required>
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-success">➕ Añadir</button>
+                </div>
             </div>
-
-            <div class="d-flex gap-2 align-items-center">
-              <input id="searchInput" type="search" class="form-control form-control-sm" placeholder="Buscar petición...">
-              <form method="POST" action="{{ url_for('peticiones.crear_peticion') }}" class="d-flex ms-2">
-                <input name="nombre_peticion" type="text" class="form-control form-control-sm" placeholder="Nueva petición" required>
-                <button class="btn btn-success btn-sm ms-2" type="submit">➕ Añadir</button>
-              </form>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
-              <thead class="table-light">
-                <tr>
-                  <th>Nombre</th>
-                  <th class="text-center actions-col">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="peticionesTable">
-                {{ table_rows|safe }}
-              </tbody>
+        </form>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Nombre de la Petición</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ table_rows|safe }}
+                </tbody>
             </table>
-          </div>
-
-          <div class="mt-2 text-muted small">
-            Mostrando <strong id="countLabel">--</strong> peticiones.
-          </div>
         </div>
-      </div>
     </div>
-  </main>
-
-  <footer class="text-center py-3 text-muted small">
-    SmartData • Sistema de gestión — UI mejorada
-  </footer>
-
-  <script>
-    // Simple client-side search & counter
-    const searchInput = document.getElementById('searchInput');
-    const table = document.getElementById('peticionesTable');
-    const countLabel = document.getElementById('countLabel');
-
-    function updateCount() {
-      const visible = Array.from(table.querySelectorAll('tr')).filter(r => r.style.display !== 'none').length;
-      countLabel.textContent = visible;
-    }
-
-    function filterRows() {
-      const q = searchInput.value.trim().toLowerCase();
-      const rows = table.querySelectorAll('tr');
-      rows.forEach(r => {
-        const text = r.innerText.toLowerCase();
-        r.style.display = text.includes(q) ? '' : 'none';
-      });
-      updateCount();
-    }
-
-    // initial count
-    window.addEventListener('load', () => {
-      updateCount();
-    });
-
-    searchInput.addEventListener('input', filterRows);
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
 """, table_rows=table_rows)
 
 # ==============================
