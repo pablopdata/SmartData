@@ -4,6 +4,8 @@ from registro_diario import registro_bp
 
 from solicitudes import solicitudes_bp
 
+from peticiones import peticiones_bp
+
 app = Flask(__name__)
 
 # 🔹 Registro de Blueprints
@@ -11,6 +13,8 @@ app = Flask(__name__)
 app.register_blueprint(registro_bp, url_prefix="/registro")
 
 app.register_blueprint(solicitudes_bp, url_prefix="/solicitudes")
+
+app.register_blueprint(peticiones_bp, url_prefix="/peticiones")
 
 # ==============================
 
@@ -49,6 +53,7 @@ def index():
         <div class="ml-auto">
             <a href="{{ url_for('registro.ver_tabla') }}" class="btn btn-primary mr-2">📅 Registro Diario</a>
             <a href="{{ url_for('solicitudes.ver_solicitudes') }}" class="btn btn-success">📝 Solicitudes</a>
+            <a href="{{ url_for('peticiones.ver_peticiones') }}" class="btn btn-warning">🎯 Peticiones</a>
         </div>
     </nav>
 
