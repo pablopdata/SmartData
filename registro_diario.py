@@ -24,11 +24,11 @@ def ver_tabla():
 
     try:
 
-        solicitudes = [r["solicitud"] for r in supabase.table("solicitudes").select("solicitud").eq("completada", False).execute().data]
+        tareas = [r["tarea"] for r in supabase.table("solicitudes").select("tarea").eq("completada", False).execute().data]
 
     except Exception:
 
-        solicitudes = []
+        tareas = []
 
     try:
 
@@ -78,7 +78,7 @@ def ver_tabla():
 <div class="col">
 <select name="tarea" class="form-control">
 
-        {% for opcion in solicitudes %}
+        {% for opcion in tareas %}
 <option value="{{ opcion }}">{{ opcion }}</option>
 
         {% endfor %}
@@ -95,15 +95,15 @@ def ver_tabla():
 </div>
 <div class="col"><input type="number" step="0.1" name="horas" placeholder="Horas" class="form-control" required></div>
 <div class="col"><input type="text" name="peticion" placeholder="Petición" class="form-control" required></div>
-<div class="col"><input type="number" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
-<div class="col"><input type="number" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
+<div class="col"><input type="text" name="porcentaje_real" placeholder="% Real" class="form-control"></div>
+<div class="col"><input type="text" name="porcentaje_nvs" placeholder="% NVS" class="form-control"></div>
 <div class="col"><button type="submit" class="btn btn-success">➕ Añadir</button></div>
 </div></form>
 <table class="table table-striped table-bordered"><thead class="thead-dark">
-<tr><th>Fecha</th><th>Solicitud</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
+<tr><th>Fecha</th><th>Tarea</th><th>Persona</th><th>Horas</th><th>Petición</th><th>% Real</th><th>% NVS</th><th>Acciones</th></tr>
 </thead><tbody>{{ table_rows|safe }}</tbody></table></div></body></html>
 
-""", table_rows=table_rows, solicitudes=solicitudes, personas=personas)
+""", table_rows=table_rows, tareas=tareas, personas=personas)
 
 
 # 🔹 Crear nuevo registro
@@ -126,9 +126,9 @@ def crear_registro():
 
             "peticion": request.form.get("peticion"),
 
-            "porcentaje_real": float(request.form.get("porcentaje_real") or 0),
+            "porcentaje_real": request.form.get("porcentaje_real"),
 
-            "porcentaje_nvs": float(request.form.get("porcentaje_nvs") or 0)
+            "porcentaje_nvs": request.form.get("porcentaje_nvs")
 
         }
 
@@ -163,13 +163,15 @@ def editar_registro(registro_id):
 
                 "peticion": request.form.get("peticion"),
 
-                "porcentaje_real": (request.form.get("porcentaje_real")),
+                "porcentaje_real": request.form.get("porcentaje_real"),
 
-                "porcentaje_nvs": (request.form.get("porcentaje_nvs"))
+                "porcentaje_nvs": request.form.get("porcentaje_nvs")
 
             }
 
-            supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
+            result = supabase.table("registro_diario").update(data).eq("id", registro_id).execute()
+
+            print("✅ Resultado UPDATE:", result.data)
 
         except Exception as e:
 
@@ -181,7 +183,7 @@ def editar_registro(registro_id):
 
     registro = response.data[0] if response.data else {}
 
-    solicitudes = [r["solicitud"] for r in supabase.table("solicitudes").select("solicitud").eq("completada", False).execute().data]
+    tareas = [r["tarea"] for r in supabase.table("solicitudes").select("tarea").eq("completada", False).execute().data]
 
     personas = [r["nombre"] for r in supabase.table("personas").select("nombre").execute().data]
 
@@ -194,9 +196,9 @@ def editar_registro(registro_id):
 <h2>Editar Registro Diario</h2>
 <form method="POST">
 <input type="date" name="fecha" value="{{ registro['fecha'] }}" class="form-control mb-2" required>
-<select name="solicitud" class="form-control mb-2">
+<select name="tarea" class="form-control mb-2">
 
-{% for opcion in solicitudes %}
+{% for opcion in tareas %}
 <option value="{{ opcion }}" {% if opcion == registro['tarea'] %}selected{% endif %}>{{ opcion }}</option>
 
 {% endfor %}
@@ -217,7 +219,7 @@ def editar_registro(registro_id):
 </form>
 </body></html>
 
-""", registro=registro, solicitudes=solicitudes, personas=personas)
+""", registro=registro, tareas=tareas, personas=personas)
 
 
 # 🔹 Eliminar registro
