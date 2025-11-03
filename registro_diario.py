@@ -163,9 +163,9 @@ def editar_registro(registro_id):
 
                 "peticion": request.form.get("peticion"),
 
-                "porcentaje_real": float(request.form.get("porcentaje_real") or 0),
+                "porcentaje_real": float(request.form.get("porcentaje_real")),
 
-                "porcentaje_nvs": float(request.form.get("porcentaje_nvs") or 0)
+                "porcentaje_nvs": float(request.form.get("porcentaje_nvs"))
 
             }
 
