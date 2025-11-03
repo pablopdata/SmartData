@@ -24,17 +24,13 @@ def ver_solicitudes():
 
         personas = personas_res.data or []
 
-        # Crear diccionario id_persona → nombre
-
         personas_dict = {p["id"]: p["nombre"] for p in personas}
 
     except Exception as e:
 
         print(f"❌ Error obteniendo datos: {e}")
 
-        solicitudes, personas_dict = [], {}
-
-    # Generar filas de la tabla
+        solicitudes, personas_dict, personas = [], {}, []
 
     if not solicitudes:
 
@@ -107,10 +103,10 @@ def ver_solicitudes():
 <select name="persona_id" class="form-control" required>
 <option value="">Seleccione persona...</option>
 
-      {% for p in personas %}
+{% for p in personas %}
 <option value="{{ p['id'] }}">{{ p['nombre'] }}</option>
 
-      {% endfor %}
+{% endfor %}
 </select>
 </div>
 <div class="col">
@@ -170,7 +166,7 @@ def crear_solicitud():
 
         "fecha_fin": request.form.get("fecha_fin"),
 
-        "persona_id": request.form.get("persona_id"),
+        "persona_id": int(request.form.get("persona_id")) if request.form.get("persona_id") else None,
 
         "completada": request.form.get("completada") == "true"
 
@@ -187,6 +183,7 @@ def crear_solicitud():
         print("❌ Error al crear solicitud:", e)
 
     return redirect(url_for("solicitudes.ver_solicitudes"))
+ 
  
 
 
