@@ -42,7 +42,7 @@ def ver_tabla():
 
         f"<tr>"
 
-        f"<td>{row.get('fecha','')}</td><td>{row.get('solicitud','')}</td><td>{row.get('persona','')}</td>"
+        f"<td>{row.get('fecha','')}</td><td>{row.get('tarea','')}</td><td>{row.get('persona','')}</td>"
 
         f"<td>{row.get('horas','')}</td><td>{row.get('peticion','')}</td>"
 
@@ -76,7 +76,7 @@ def ver_tabla():
 <div class="form-row">
 <div class="col"><input type="date" name="fecha" class="form-control" required></div>
 <div class="col">
-<select name="solicitud" class="form-control">
+<select name="tarea" class="form-control">
 
         {% for opcion in solicitudes %}
 <option value="{{ opcion }}">{{ opcion }}</option>
@@ -118,7 +118,7 @@ def crear_registro():
 
             "fecha": request.form.get("fecha"),
 
-            "solicitud": request.form.get("solicitud"),
+            "tarea": request.form.get("tarea"),
 
             "persona": request.form.get("persona"),
 
@@ -155,7 +155,7 @@ def editar_registro(registro_id):
 
                 "fecha": request.form.get("fecha"),
 
-                "solicitud": request.form.get("solicitud"),
+                "tarea": request.form.get("tarea"),
 
                 "persona": request.form.get("persona"),
 
@@ -197,7 +197,7 @@ def editar_registro(registro_id):
 <select name="solicitud" class="form-control mb-2">
 
 {% for opcion in solicitudes %}
-<option value="{{ opcion }}" {% if opcion == registro['solicitud'] %}selected{% endif %}>{{ opcion }}</option>
+<option value="{{ opcion }}" {% if opcion == registro['tarea'] %}selected{% endif %}>{{ opcion }}</option>
 
 {% endfor %}
 </select>
