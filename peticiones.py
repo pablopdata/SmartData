@@ -56,16 +56,16 @@ def ver_peticiones():
 <html>
 <head>
     <title>Peticiones</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2ap.min.css
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        {{ url_for(← Volver</a>
+        <a class="navbar-brand" href="{{ url_for('index') }}">← Volver</a>
         <span class="navbar-text ml-3 text-white">Gestión de Peticiones</span>
     </nav>
     <div class="container mt-5">
         <h2 class="mb-4">Tabla de Peticiones</h2>
-        {{ url_for(
+        <form method="POST" action="{{ url_for('peticiones.crear_peticion') }}" class="mb-4">
             <div class="form-row">
                 <div class="col">
                     <input type="text" name="nombre_peticion" class="form-control" placeholder="Nombre de la Petición" required>
